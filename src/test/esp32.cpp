@@ -27,10 +27,10 @@ Temt temts[10] = {
 
 void request() {
     int16_t angleToBeSent = angle;
-byte packet[2];
-packet[0] = (angleToBeSent >> 8) & 0xFF;
-packet[1] = angleToBeSent & 0xFF;
-Wire.write(packet, 2);
+    byte packet[2];
+    packet[0] = (angleToBeSent >> 8) & 0xFF;
+    packet[1] = angleToBeSent & 0xFF;
+    Wire.write(packet, 2);
 }
 
 
@@ -38,7 +38,6 @@ void setup() {
     Wire.begin(54); //Need to change address?
     Serial.begin(115200);
     Wire.onRequest(request);
-
 }
 
 /*
@@ -70,5 +69,6 @@ void loop(){
     } else {
         angle = 65535; //Largest 16 it number, used to indicate when there is no need to avoid the line
     }
+    Serial.println(angle);
 }
 
