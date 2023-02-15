@@ -8,7 +8,7 @@ def preBuild(source, target, env):
     hostname = socket.gethostname()
     system = platform.system()
 
-    if system == 'Darwin' and hostname == 'MBP':
+    if system == 'Darwin' and 'MBP' in hostname:
         if os.path.exists('/Applications/Xcode.app/Contents/Developer'):
             os.rename('/Applications/Xcode.app/Contents/Developer', '/Applications/Xcode.app/Contents/Developer.bak')
             print("INFO: Xcode renamed")
