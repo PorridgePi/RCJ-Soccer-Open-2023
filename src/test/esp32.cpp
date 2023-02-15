@@ -1,7 +1,7 @@
 #include "Temt.h"
 #include "Wire.h"
 #include <Arduino.h>
-#define TEMT_THRESHOLD 100
+#define TEMT_THRESHOLD 100 // to be calibrated
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -57,14 +57,15 @@ if (packet[1] == 0xFF) {
 */
 
 void loop() {
-    float sumX = 0;
-    float sumY = 0;
-    for (int i = 0; i < 11; i++) {
+    float sumX, sumY = 0;
+
+    for (int i = 0; i < 10; i++) {
         if (temts[i].read() > TEMT_THRESHOLD) {
-            sumX = sumX + temts[i].X;
-            sumY = sumY + temts[i].Y;
+            sumX += temts[i].X;
+            sumY += temts[i].Y;
         }
     }
+
     if (sumX != 0 || sumY != 0) {
         canSeeLine = true;
         angle      = atan2f(sumX, sumY) / 3.14159265358979323846f * 180;
@@ -72,5 +73,6 @@ void loop() {
         angle = 65535; // Largest 16 it number, used to indicate when there is
                        // no need to avoid the line
     }
+
     Serial.println(angle);
 }
