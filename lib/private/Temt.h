@@ -10,6 +10,7 @@ class Temt {
         };
         const float X;
         const float Y;
+
     private:
         const int _pin;
 };

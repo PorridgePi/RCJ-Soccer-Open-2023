@@ -10,6 +10,7 @@ class Kicker {
             delay(100);
             digitalWrite(_pin, LOW);
         };
+
     private:
         const int _pin;
 };
