@@ -13,8 +13,7 @@
 // 14         02
 //    13   15
 
-float angle      = 0;
-bool  canSeeLine = false;
+float angle;
 Led led;
 
 Temt temts[10] = {
@@ -77,7 +76,10 @@ if (packet[1] == 0xFF) {
 */
 
 void loop() {
+    // Reset the values
     float sumX = 0, sumY = 0;
+    bool canSeeLine = false;
+    angle = 65535; // Largest 16 bit number, used to indicate when there is no need to avoid the line
 
     for (int i = 0; i < 10; i++) {
         if (DEBUG) {
@@ -94,15 +96,14 @@ void loop() {
     if (sumX != 0 || sumY != 0) {
         canSeeLine = true;
         angle      = atan2f(-sumX, -sumY) / 3.14159265358979323846f * 180;
-    } else {
-        angle = 65535; // Largest 16 bit number, used to indicate when there is
-                       // no need to avoid the line
     }
 
     if (DEBUG) {
         Serial.print(sumX);
         Serial.print("\t");
         Serial.print(sumY);
+        Serial.print("\t");
+        Serial.print(canSeeLine);
         Serial.print("\t");
         Serial.println(angle);
     }
