@@ -1,3 +1,6 @@
+#ifndef KICKER_H
+#define KICKER_H
+
 #include "Arduino.h"
 
 const float pi = 3.14159265358979323846f; // probably will reduce the precision
@@ -58,3 +61,5 @@ class Motor {
         pinMode(_pin1, OUTPUT);
     } // SETS _angle = ANGL, _multiplier = MULT, etc.
 };
+
+#endif

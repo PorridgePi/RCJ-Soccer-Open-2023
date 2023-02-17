@@ -1,3 +1,6 @@
+#ifndef KICKER_H
+#define KICKER_H
+
 #include <Arduino.h>
 
 class Kicker {
@@ -14,3 +17,5 @@ class Kicker {
     private:
         const int _pin;
 };
+
+#endif

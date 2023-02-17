@@ -1,3 +1,6 @@
+#ifndef KICKER_H
+#define KICKER_H
+
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -42,3 +45,5 @@ class Lidar {
     private:
         int _addr;
 };
+
+#endif
