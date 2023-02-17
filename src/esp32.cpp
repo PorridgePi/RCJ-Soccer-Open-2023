@@ -58,7 +58,7 @@ if (packet[1] == 0xFF) {
 */
 
 void loop() {
-    float sumX, sumY = 0;
+    float sumX = 0, sumY = 0;
 
     for (int i = 0; i < 10; i++) {
         if (temts[i].read() > TEMT_THRESHOLD) {
