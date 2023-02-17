@@ -1,5 +1,5 @@
-#include "Motor.h"
-#include "Arduino.h"
+#include <Motor.h>
+#include <Arduino.h>
 
 Motor A(45, 1, 12, 13);
 

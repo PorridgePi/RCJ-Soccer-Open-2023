@@ -1,7 +1,7 @@
 #ifndef KICKER_H
 #define KICKER_H
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 const float pi = 3.14159265358979323846f; // probably will reduce the precision
 const float rad = pi / 180;

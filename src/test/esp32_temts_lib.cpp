@@ -1,4 +1,4 @@
-#include "Temt.h"
+#include <Temt.h>
 #include <Arduino.h>
 
 // PIN, X POSITION, Y POSITION
