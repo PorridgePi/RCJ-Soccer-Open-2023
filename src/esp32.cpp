@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #define TEMT_THRESHOLD 1000 // to be calibrated
+#define DEBUG true
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -79,6 +80,11 @@ void loop() {
     float sumX = 0, sumY = 0;
 
     for (int i = 0; i < 10; i++) {
+        if (DEBUG) {
+            Serial.print(temts[i].read());
+            Serial.print("\t");
+        }
+
         if (temts[i].read() > TEMT_THRESHOLD) {
             sumX += temts[i].X;
             sumY += temts[i].Y;
@@ -93,5 +99,12 @@ void loop() {
                        // no need to avoid the line
     }
 
-    Serial.println(angle);
+    if (DEBUG) {
+        Serial.print("\t");
+        Serial.print(sumX);
+        Serial.print("\t");
+        Serial.print(sumY);
+        Serial.print("\t");
+        Serial.println(angle);
+    }
 }
