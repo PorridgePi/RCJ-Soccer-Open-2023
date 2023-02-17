@@ -13,7 +13,16 @@ For Visual Studio Code:
     - `extensions.json`: List of recommended and unwanted extensions ([Documentation](https://code.visualstudio.com/docs/editor/extension-gallery#_workspace-recommended-extensions))
 - `lib/`: Libraries for components
     - `private/`: Our own libraries for components
+    - `public/`: Libraries from other sources
+        - `Led.h`: Library for SK6812 LED - [gitpeut/SK6812-RGBW-ESP32
+](https://github.com/gitpeut/SK6812-RGBW-ESP32)
+- `scripts/`: Scripts for PlatformIO
+    - `sim.py`: Simulation of ball tracking with Python Turtle graphics
+    - `extra_scripts.py`: Script to run before and after build
 - `src/`: Main code
+    - `test/`: Test code
+    - `main.cpp`: Main code for RPi Pico
+    - `esp32.cpp`: Code for ESP32 (on bottom plate)
 - `.clang-format`: ClangFormat code style file - to format code in VSCode
 - `.gitignore`: gitignore file ([Documentation](https://git-scm.com/docs/gitignore))
 - `platformio.ini`: PlatformIO configuration file ([Documentation](https://docs.platformio.org/en/stable/projectconf/index.html))
