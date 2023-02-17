@@ -3,7 +3,7 @@
 #include "sk.h"
 #include <Arduino.h>
 
-#define TEMT_THRESHOLD 100 // to be calibrated
+#define TEMT_THRESHOLD 1000 // to be calibrated
 
 // PIN, X POSITION, Y POSITION
 //    25   33
