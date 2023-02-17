@@ -36,12 +36,7 @@ Temt temts[10] = {
     Temt(2, 1, -0.4),
     Temt(15, 0.4, -1),
     Temt(13, -0.4, -1),
-    Temt(14, -1, -0.4),
-    Temt(27, -1, 0),
-    Temt(26, -1, 0.4),
-    Temt(25, -0.4, 1),
-};
-
+    
 void loop() {
     for (int i = 0; i < 10; i++) {
         Serial.print(temts[i].read());
