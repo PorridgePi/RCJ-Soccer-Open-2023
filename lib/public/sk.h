@@ -1,17 +1,17 @@
 // Original file name: sk.h
 // Obtained from https://github.com/gitpeut/SK6812-RGBW-ESP32
 
-#ifndef SK_H
-#define SK_H 1
+#ifndef LED_H
+#define LED_H 1
 
 #include "driver/rmt.h"
 
 // Use RMT for a strip of SK6812 RGBW leds
 
-class sk {
+class Led {
     public:
-        sk(void) {}
-        ~sk(void) {
+        Led(void) {}
+        ~Led(void) {
             free(_skstrip);
             rmt_driver_uninstall(skconfig.channel);
         }

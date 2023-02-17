@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "sk.h"
 
-sk led;
+Led led;
 
 void setup() {
     led.begin(18, 10);

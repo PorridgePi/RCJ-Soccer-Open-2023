@@ -15,7 +15,7 @@
 
 float angle      = 0;
 bool  canSeeLine = false;
-sk led;
+Led led;
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),

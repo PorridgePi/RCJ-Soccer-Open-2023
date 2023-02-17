@@ -2,7 +2,7 @@
 #include "sk.h"
 #include <Arduino.h>
 
-sk led;
+Led led;
 
 void led_color(int pin, int r, int g, int b, int w) {
     led.begin(pin, 10);
