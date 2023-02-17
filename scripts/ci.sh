@@ -8,5 +8,8 @@ for section in $sections; do
         correct_section=${section:4}
         echo $correct_section
         pio run -e $correct_section
+        if [ $? -ne 0 ]; then
+            exit 1
+        fi
     fi
 done
