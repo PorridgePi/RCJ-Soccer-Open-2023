@@ -1,6 +1,6 @@
 #include "Temt.h"
 #include "Wire.h"
-#include "sk.h"
+#include "Led.h"
 #include <Arduino.h>
 
 #define TEMT_THRESHOLD 1000 // to be calibrated
