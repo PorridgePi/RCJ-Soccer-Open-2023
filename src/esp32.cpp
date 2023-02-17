@@ -100,7 +100,6 @@ void loop() {
     }
 
     if (DEBUG) {
-        Serial.print("\t");
         Serial.print(sumX);
         Serial.print("\t");
         Serial.print(sumY);
