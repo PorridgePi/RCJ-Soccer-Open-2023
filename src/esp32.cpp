@@ -1,6 +1,8 @@
 #include "Temt.h"
 #include "Wire.h"
+#include "sk.h"
 #include <Arduino.h>
+
 #define TEMT_THRESHOLD 100 // to be calibrated
 
 // PIN, X POSITION, Y POSITION
@@ -12,6 +14,7 @@
 
 float angle      = 0;
 bool  canSeeLine = false;
+sk led;
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -34,10 +37,25 @@ void request() {
     Wire.write(packet, 2);
 }
 
+void led_color(int pin, int r, int g, int b, int w) {
+    led.begin(pin, 10);
+    for (int i = 0; i < 10; i++) {
+        led.color(i, r, g, b, w);
+    }
+    led.show();
+}
+
 void setup() {
-    Wire.begin(54); // Need to change address?
     Serial.begin(115200);
+
+    Wire.begin(54); // Need to change address?
     Wire.onRequest(request);
+
+    led_color(18, 255, 0, 0, 0);
+    delay(500);
+    led_color(18, 0, 0, 0, 0);
+    delay(500);
+    led_color(18, 255, 255, 255, 255);
 }
 
 /*
