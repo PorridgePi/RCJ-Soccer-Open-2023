@@ -93,7 +93,7 @@ void loop() {
 
     if (sumX != 0 || sumY != 0) {
         canSeeLine = true;
-        angle      = atan2f(sumX, sumY) / 3.14159265358979323846f * 180;
+        angle      = atan2f(-sumX, -sumY) / 3.14159265358979323846f * 180;
     } else {
         angle = 65535; // Largest 16 bit number, used to indicate when there is
                        // no need to avoid the line
