@@ -1,26 +1,29 @@
-#include "Arduino.h"
-#include "Motor.h"
-Motor A(45,1,12,13);
-void setup() {
-  pinMode(PIN_LED, OUTPUT);
-  Serial.begin(9600);
+#include <Arduino.h>
+
+#define DEBUG true
+
+// Thresholds
+#define LIGHT_GATE_THRESHOLD 400
+
+// Pins
+#define LIGHT_GATE_PIN A2
+
+bool isBallInGate() {
+    if (analogRead(LIGHT_GATE_PIN) < LIGHT_GATE_THRESHOLD) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
+void setup() {
+    Serial.begin(9600);
+}
 
 void loop() {
-  //for debugging:
-  if (Velocity.direction > 360) {
-    Velocity.direction = 0;
-  } else {
-    Velocity.direction ++;
-    Velocity.direction ++;
-    Velocity.direction ++;
-  }
-  Serial.println(Velocity.direction);
-  Serial.println(Velocity.magnitude);
-  Serial.println(A.drive());
-  digitalWrite(PIN_LED, HIGH);
-  delay(10);
-  digitalWrite(PIN_LED, LOW);
-  delay(10);
+    if (isBallInGate()) {
+        digitalWrite(PIN_LED, HIGH);
+    } else {
+        digitalWrite(PIN_LED, LOW);
+    }
 }

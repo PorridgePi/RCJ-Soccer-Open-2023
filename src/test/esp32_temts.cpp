@@ -1,7 +1,7 @@
-#include "Arduino.h"
+#include <Arduino.h>
 
 void setup() {
-  Serial.begin(115200);
+    Serial.begin(115200);
 }
 
 // PINS FOR TEMTS

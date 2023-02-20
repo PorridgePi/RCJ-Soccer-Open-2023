@@ -1,5 +1,26 @@
 #include <Temt.h>
+#include <Led.h>
 #include <Arduino.h>
+
+Led led;
+
+void led_color(int pin, int r, int g, int b, int w) {
+    led.begin(pin, 10);
+    for (int i = 0; i < 10; i++) {
+        led.color(i, r, g, b, w);
+    }
+    led.show();
+}
+
+void setup() {
+    Serial.begin(115200);
+
+    led_color(18, 255, 0, 0, 0);
+    delay(500);
+    led_color(18, 0, 0, 0, 0);
+    delay(500);
+    led_color(18, 255, 255, 255, 255);
+}
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -20,10 +41,6 @@ Temt temts[10] = {
     Temt(26, -1, 0.4),
     Temt(25, -0.4, 1),
 };
-
-void setup() {
-    Serial.begin(115200);
-}
 
 void loop() {
     for (int i = 0; i < 10; i++) {

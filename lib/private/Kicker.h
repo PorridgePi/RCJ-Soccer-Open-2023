@@ -1,3 +1,6 @@
+#ifndef KICKER_H
+#define KICKER_H
+
 #include <Arduino.h>
 
 class Kicker {
@@ -10,6 +13,9 @@ class Kicker {
             delay(100);
             digitalWrite(_pin, LOW);
         };
+
     private:
         const int _pin;
 };
+
+#endif

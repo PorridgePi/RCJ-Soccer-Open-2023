@@ -1,7 +1,10 @@
-#include "Temt.h"
-#include "Wire.h"
+#include <Temt.h>
+#include <Wire.h>
+#include <Led.h>
 #include <Arduino.h>
-#define TEMT_THRESHOLD 100 // to be calibrated
+
+#define TEMT_THRESHOLD 1000 // to be calibrated
+#define DEBUG true
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -10,8 +13,8 @@
 // 14         02
 //    13   15
 
-float angle      = 0;
-bool  canSeeLine = false;
+float angle;
+Led led;
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -34,10 +37,25 @@ void request() {
     Wire.write(packet, 2);
 }
 
+void led_color(int pin, int r, int g, int b, int w) {
+    led.begin(pin, 10);
+    for (int i = 0; i < 10; i++) {
+        led.color(i, r, g, b, w);
+    }
+    led.show();
+}
+
 void setup() {
-    Wire.begin(54); // Need to change address?
     Serial.begin(115200);
+
+    Wire.begin(54); // Need to change address?
     Wire.onRequest(request);
+
+    led_color(18, 255, 0, 0, 0);
+    delay(500);
+    led_color(18, 0, 0, 0, 0);
+    delay(500);
+    led_color(18, 255, 255, 255, 255);
 }
 
 /*
@@ -52,14 +70,23 @@ if (packet[1] == 0xFF) {
     return packet[1]
 }
 
-// Need to make the part that detects the 65535 value when nothing it detected by them temts
+// Need to make the part that detects the 65535 value when nothing it detected 
+// by the temts
 
 */
 
 void loop() {
-    float sumX, sumY = 0;
+    // Reset the values
+    float sumX = 0, sumY = 0;
+    bool canSeeLine = false;
+    angle = 65535; // Largest 16 bit number, used to indicate when there is no need to avoid the line
 
     for (int i = 0; i < 10; i++) {
+        if (DEBUG) {
+            Serial.print(temts[i].read());
+            Serial.print("\t");
+        }
+
         if (temts[i].read() > TEMT_THRESHOLD) {
             sumX += temts[i].X;
             sumY += temts[i].Y;
@@ -68,11 +95,16 @@ void loop() {
 
     if (sumX != 0 || sumY != 0) {
         canSeeLine = true;
-        angle      = atan2f(sumX, sumY) / 3.14159265358979323846f * 180;
-    } else {
-        angle = 65535; // Largest 16 it number, used to indicate when there is
-                       // no need to avoid the line
+        angle      = atan2f(-sumX, -sumY) / 3.14159265358979323846f * 180;
     }
 
-    Serial.println(angle);
+    if (DEBUG) {
+        Serial.print(sumX);
+        Serial.print("\t");
+        Serial.print(sumY);
+        Serial.print("\t");
+        Serial.print(canSeeLine);
+        Serial.print("\t");
+        Serial.println(angle);
+    }
 }
