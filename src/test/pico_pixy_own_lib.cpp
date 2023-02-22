@@ -18,16 +18,18 @@ int signature, x, y, width, height;
 int headers[6];
 int block[14];
 
-void loop() {
-    long long time = micros();
-    uint8_t buf[6] = {174, 193, 32, 2, 255, 255};
-    PixySerial.write(buf, 6);
+
+void PixySerialEvent() {
     if (PixySerial.available()) {
         headers[0] = PixySerial.read();
-        while (headers[0] != 175) { // 16-bit sync - Bit 0 = 175
+    }
+    while (headers[0] != 175) { // 16-bit sync - Bit 0 = 175
+        if (PixySerial.available()) {
             headers[0] = PixySerial.read();
         }
-        for (int i = 1; i < 6; i++) {
+    }
+    for (int i = 1; i < 6; i++) {
+        if (PixySerial.available()) {
             headers[i] = PixySerial.read();
         }
     }
@@ -80,10 +82,21 @@ void loop() {
                 }
             }
             if (i != payloadLength + 1) {
-                block[i % 14] = PixySerial.read();
+                if (PixySerial.available()) {
+                    block[i % 14] = PixySerial.read();
+                }
             }
         }
         Serial.println();
+    }
+}
+
+void loop() {
+    long long time = micros();
+    uint8_t buf[6] = {174, 193, 32, 2, 255, 255};
+    PixySerial.write(buf, 6);
+    if (PixySerial.available()) {
+        PixySerialEvent();
     }
     if (DEBUG_DELAY) {
         delay(10);
