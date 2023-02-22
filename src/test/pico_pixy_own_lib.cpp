@@ -1,8 +1,14 @@
 #include <Arduino.h>
+#include <SoftwareSerial.h>
+
+#define PIXY_TX 8
+#define PIXY_RX 15
+
+SoftwareSerial PixySerial(PIXY_RX, PIXY_TX);
 
 void setup() {
     Serial.begin(19200);
-    Serial1.begin(19200);
+    PixySerial.begin(19200);
 }
 
 int signature, x, y, width, height;
@@ -10,14 +16,14 @@ int response[20];
 
 void loop() {
     uint8_t buf[6] = {174, 193, 32, 2, 255, 255};
-    Serial1.write(buf, 6);
-    if (Serial1.available()) {
-        response[0] = Serial1.read();
+    PixySerial.write(buf, 6);
+    if (PixySerial.available()) {
+        response[0] = PixySerial.read();
         while (response[0] != 175) {
-            response[0] = Serial1.read();
+            response[0] = PixySerial.read();
         }
         for (int i = 1; i < 20; i++) {
-            response[i] = Serial1.read();
+            response[i] = PixySerial.read();
         }
         delay(100);
     }
