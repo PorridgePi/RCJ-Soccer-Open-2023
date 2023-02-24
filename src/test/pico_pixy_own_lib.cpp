@@ -4,6 +4,8 @@
 #define DEBUG_DELAY false
 #define DEBUG_LED false
 
+#define BUFFER_LENGTH 50
+
 #define PIXY_TX 8
 #define PIXY_RX 15
 
@@ -19,11 +21,23 @@ void setup() {
 
 int signature, x, y, width, height;
 
-int headers[6];
-int buffer[100];
+int blockLastDetected = 0;
+
+int buffer[BUFFER_LENGTH];
+
+bool recvInProgress = false;
 
 void printData() {
-
+    Serial.print(signature);
+    Serial.print("\t");
+    Serial.print(x);
+    Serial.print("\t");
+    Serial.print(y);
+    Serial.print("\t");
+    Serial.print(width);
+    Serial.print("\t");
+    Serial.print(height);
+    Serial.print("\t");
 }
 
 int i = 2;
@@ -38,20 +52,28 @@ void parseData2() {
     // bytes 10-11 = y
     // bytes 12-13 = width
     // bytes 14-15 = height
-    
-    if (buffer[2] == 33 && buffer[6] > 0) {
-        if (DEBUG_LED) digitalWrite(PIN_LED, HIGH);
-    }
 
-    // int signature = buffer[6] + buffer[7] * 256;
-    // int x         = buffer[8] + buffer[9] * 256;
-    // int y         = buffer[10] + buffer[11] * 256;
-    // int width     = buffer[12] + buffer[13] * 256;
-    // int height    = buffer[14] + buffer[15] * 256;
+    if (buffer[2] == 33 && buffer[6] > 0) {
+        signature = buffer[6] + buffer[7] * 256;
+        x         = buffer[8] + buffer[9] * 256;
+        y         = buffer[10] + buffer[11] * 256;
+        width     = buffer[12] + buffer[13] * 256;
+        height    = buffer[14] + buffer[15] * 256;
+        if (DEBUG_LED) digitalWrite(PIN_LED, HIGH);
+        blockLastDetected = 0;
+    } else {
+        if (blockLastDetected > 10) { // if no block detected for 10 loops, set values to -1
+            signature = -1;
+            x         = -1;
+            y         = -1;
+            width     = -1;
+            height    = -1;
+        }
+        blockLastDetected++;
+    }
 }
 
 void PixySerialEvent() {
-    static boolean recvInProgress = false;
     while (PixySerial.available() > 0 && newData == false) {
         prevNum = r;
         r = PixySerial.read();
@@ -60,7 +82,7 @@ void PixySerialEvent() {
             if (i == 3) {
                 if (r % 14 == 0) {
                     length += r + 2; // account for 2 bytes of checksum
-                    constrain(length, 0, 99);
+                    constrain(length, 0, BUFFER_LENGTH - 1);
                 }
             }
             if (i < length) {
@@ -89,7 +111,6 @@ void loop() {
 
     if (newData == true) {
         parseData2();
-        // printData();
         memset(buffer, 0, sizeof(buffer));
         newData = false;
     }
@@ -97,6 +118,8 @@ void loop() {
     if (DEBUG_DELAY) {
         delay(10);
     }
+
+    printData();
 
     // Serial.print("\t");
     Serial.print((float)(micros()-time)/1000);
