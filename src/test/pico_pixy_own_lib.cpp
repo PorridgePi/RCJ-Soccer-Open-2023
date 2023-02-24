@@ -8,24 +8,25 @@
 
 #define PIXY_TX 8
 #define PIXY_RX 15
+SoftwareSerial PixySerial(PIXY_RX, PIXY_TX);
 
 bool newData = false;
-String state = "read";
+bool recvInProgress = false;
 
-SoftwareSerial PixySerial(PIXY_RX, PIXY_TX);
+int signature, x, y, width, height;
+
+int i = 2;
+int r = 0;
+int length = 4;
+int prevNum = 0;
+int blockLastDetected = 0;
+
+int buffer[BUFFER_LENGTH];
 
 void setup() {
     Serial.begin(19200);
     PixySerial.begin(19200);
 }
-
-int signature, x, y, width, height;
-
-int blockLastDetected = 0;
-
-int buffer[BUFFER_LENGTH];
-
-bool recvInProgress = false;
 
 void printData() {
     Serial.print(signature);
@@ -40,13 +41,7 @@ void printData() {
     Serial.print("\t");
 }
 
-int i = 2;
-int r = 0;
-int length = 4;
-
-int prevNum = 0;
-
-void parseData2() {
+void pixyParseData() {
     // bytes 6-7 = signature
     // bytes 8-9 = x
     // bytes 10-11 = y
@@ -73,7 +68,10 @@ void parseData2() {
     }
 }
 
-void PixySerialEvent() {
+void pixyReadData() {
+    uint8_t buf[6] = {174, 193, 32, 2, 255, 255};
+    PixySerial.write(buf, 6);
+
     while (PixySerial.available() > 0 && newData == false) {
         prevNum = r;
         r = PixySerial.read();
@@ -104,13 +102,10 @@ void PixySerialEvent() {
 
 void loop() {
     long long time = micros();
-    uint8_t buf[6] = {174, 193, 32, 2, 255, 255};
-    PixySerial.write(buf, 6);
-
-    PixySerialEvent();
-
+    
+    pixyReadData();
     if (newData == true) {
-        parseData2();
+        pixyParseData();
         memset(buffer, 0, sizeof(buffer));
         newData = false;
     }
@@ -120,8 +115,6 @@ void loop() {
     }
 
     printData();
-
-    // Serial.print("\t");
     Serial.print((float)(micros()-time)/1000);
     Serial.println("ms");
     if (DEBUG_LED) digitalWrite(PIN_LED, LOW);
