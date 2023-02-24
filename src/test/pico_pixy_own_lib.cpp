@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
+#define USE_MULTICORE false
+
 #define DEBUG_DELAY false
 #define DEBUG_LED false
 
@@ -102,8 +104,8 @@ void pixyReadData() {
 
 void loop() {
     long long time = micros();
-    
-    pixyReadData();
+
+    if (! USE_MULTICORE) pixyReadData();
     if (newData == true) {
         pixyParseData();
         memset(buffer, 0, sizeof(buffer));
@@ -118,4 +120,10 @@ void loop() {
     Serial.print((float)(micros()-time)/1000);
     Serial.println("ms");
     if (DEBUG_LED) digitalWrite(PIN_LED, LOW);
+}
+
+void loop1() {
+    if (USE_MULTICORE) {
+        pixyReadData();
+    }
 }
