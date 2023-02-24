@@ -1,10 +1,10 @@
+#include <Arduino.h>
+#include <Led.h>
 #include <Temt.h>
 #include <Wire.h>
-#include <Led.h>
-#include <Arduino.h>
 
 #define TEMT_THRESHOLD 1000 // to be calibrated
-#define DEBUG true
+#define DEBUG          true
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -14,7 +14,7 @@
 //    13   15
 
 float angle;
-Led led;
+Led   led;
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -70,16 +70,15 @@ if (packet[1] == 0xFF) {
     return packet[1]
 }
 
-// Need to make the part that detects the 65535 value when nothing it detected 
-// by the temts
+// Need to make the part that detects the 65535 value when nothing it detected by the temts
 
 */
 
 void loop() {
     // Reset the values
     float sumX = 0, sumY = 0;
-    bool canSeeLine = false;
-    angle = 65535; // Largest 16 bit number, used to indicate when there is no need to avoid the line
+    bool  canSeeLine = false;
+    angle            = 65535; // Largest 16 bit number, used to indicate when there is no need to avoid the line
 
     for (int i = 0; i < 10; i++) {
         if (DEBUG) {

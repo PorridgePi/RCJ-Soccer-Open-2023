@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 #define IR_THRESHOLD 200
-#define DEBUG false
+#define DEBUG        false
 
 int ambientLight = 0;
 

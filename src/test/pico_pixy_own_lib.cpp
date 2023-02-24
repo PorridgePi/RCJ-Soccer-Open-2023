@@ -28,10 +28,10 @@ void parseData() {
     // bytes 14-15 = height
     Serial.print("\t");
     int signature = block[0] + block[1] * 256;
-    int x = block[2] + block[3] * 256;
-    int y = block[4] + block[5] * 256;
-    int width = block[6] + block[7] * 256;
-    int height = block[8] + block[9] * 256;
+    int x         = block[2] + block[3] * 256;
+    int y         = block[4] + block[5] * 256;
+    int width     = block[6] + block[7] * 256;
+    int height    = block[8] + block[9] * 256;
 }
 
 void printData() {
@@ -70,7 +70,7 @@ void PixySerialEvent() {
         }
     }
 
-    int packetType = headers[2]; // should be 33
+    int packetType    = headers[2]; // should be 33
     int payloadLength = headers[3]; // multiple of 14
 
     if (headers[1] == 193 && packetType == 33 && payloadLength > 0) { // 16-bit sync - Bit 1 = 193
