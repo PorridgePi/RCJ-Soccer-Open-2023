@@ -8,7 +8,7 @@
 
 class Camera : public SoftwareSerial {
     public:
-        Camera(pin_size_t rx, pin_size_t tx) : SoftwareSerial(rx, tx) {};
+        Camera(pin_size_t rx, pin_size_t tx, int xC, int yC) : SoftwareSerial (rx, tx), _xC(xC), _yC(yC) {}
 
         bool isNewDataPresent() {
             if (_newData == true) {
@@ -85,6 +85,33 @@ class Camera : public SoftwareSerial {
             }
         }
 
+        int getBallDistance() {
+            if (_signature == 1) {
+                int xDiff = _x - _xC;
+                int yDiff = _y - _yC;
+
+                int distance = 5 * (sqrt(xDiff * xDiff + xDiff * xDiff) - 30);
+                return distance;
+            } else {
+                return -1;
+            }
+        }
+
+        int getBallAngle() {
+            if (_signature == 1) {
+                int xDiff = _x - _xC;
+                int yDiff = _y - _yC;
+
+                int angle = atan2(yDiff, xDiff) * 180 / PI + 90;
+                if (angle < 0) angle += 360; // make sure angle is positive
+                angle = 360 - angle;  // invert angle
+
+                return angle;
+            } else {
+                return -1;
+            }
+        }
+
         void printData() {
             Serial.print(_signature);
             Serial.print("\t");
@@ -103,6 +130,8 @@ class Camera : public SoftwareSerial {
         int  _signature, _x, _y, _width, _height;
 
         int _buffer[BUFFER_LENGTH];
+
+        int _xC, _yC;
 };
 
 #endif

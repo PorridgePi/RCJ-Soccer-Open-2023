@@ -6,7 +6,7 @@
 
 #define PIXY_TX 8
 #define PIXY_RX 15
-Camera Pixy(PIXY_RX, PIXY_TX);
+Camera Pixy(PIXY_RX, PIXY_TX, 142, 118);
 
 void setup() {
     Serial.begin(19200);
@@ -20,7 +20,11 @@ void loop() {
     
     Pixy.isNewDataPresent();
 
-    Pixy.printData();
+    // Pixy.printData();
+    Serial.print(Pixy.getBallDistance());
+    Serial.print("\t");
+    Serial.print(Pixy.getBallAngle());
+    Serial.print("\t");
     Serial.print((float)(micros()-time)/1000);
     Serial.println("ms");
 }
