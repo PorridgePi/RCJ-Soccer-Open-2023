@@ -90,7 +90,7 @@ class Camera : public SoftwareSerial {
                 int xDiff = _x - _xC;
                 int yDiff = _y - _yC;
 
-                int distance = 5 * (sqrt(xDiff * xDiff + xDiff * xDiff) - 30);
+                int distance = 10 * sqrt(xDiff * xDiff + xDiff * xDiff);
                 return distance;
             } else {
                 return -1;
