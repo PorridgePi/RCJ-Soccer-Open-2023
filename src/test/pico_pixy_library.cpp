@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include <SoftwareSerial.h>
 #include <Camera.h>
+#include <SoftwareSerial.h>
 
 #define USE_MULTICORE true
 
@@ -16,8 +16,8 @@ void setup() {
 void loop() {
     long long time = micros();
 
-    if (! USE_MULTICORE) Pixy.readData();
-    
+    if (!USE_MULTICORE) Pixy.readData();
+
     Pixy.isNewDataPresent();
 
     // Pixy.printData();
@@ -25,7 +25,7 @@ void loop() {
     Serial.print("\t");
     Serial.print(Pixy.getBallAngle());
     Serial.print("\t");
-    Serial.print((float)(micros()-time)/1000);
+    Serial.print((float) (micros() - time) / 1000);
     Serial.println("ms");
 }
 

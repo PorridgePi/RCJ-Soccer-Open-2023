@@ -4,8 +4,8 @@
 #define READ_FREQUENCY 1000 // every x ms
 
 unsigned long long prevI2C = 0;
-int angle;
-int data[2];
+int                angle;
+int                data[2];
 
 void setup() {
     Serial.begin(115200);
@@ -23,7 +23,7 @@ void loop() {
             data[0] = Wire.read();
             data[1] = Wire.read();
         }
-        angle = data[0] + data[1] * 256;
+        angle   = data[0] + data[1] * 256;
         prevI2C = micros();
     }
 

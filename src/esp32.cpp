@@ -4,9 +4,9 @@
 #include <Wire.h>
 
 #define I2C_ADDRESS_ESP32 8
-#define TEMT_THRESHOLD 1000 // to be calibrated
-#define DEBUG          false
-#define DEBUG_LOOP_TIME true
+#define TEMT_THRESHOLD    1000 // to be calibrated
+#define DEBUG             false
+#define DEBUG_LOOP_TIME   true
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -15,9 +15,9 @@
 // 14         02
 //    13   15
 
-int angle;
-Led   led;
-uint8_t data[2];
+int           angle;
+Led           led;
+uint8_t       data[2];
 unsigned long loopStartMicros;
 
 Temt temts[10] = {
@@ -64,8 +64,8 @@ void loop() {
     loopStartMicros = micros(); // For debugging loop time
 
     // Reset the values
-    float sumX = 0, sumY = 0;
-    bool  canSeeLine = false;
+    float      sumX = 0, sumY = 0;
+    bool       canSeeLine = false;
     static int angle;
 
     // Read the values from the sensors
@@ -107,7 +107,7 @@ void loop() {
     }
 
     if (DEBUG_LOOP_TIME) {
-        Serial.print((float)(micros() - loopStartMicros) / 1000);
+        Serial.print((float) (micros() - loopStartMicros) / 1000);
         Serial.print('\t');
     }
 
