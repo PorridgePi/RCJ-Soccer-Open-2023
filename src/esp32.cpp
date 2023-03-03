@@ -1,10 +1,11 @@
+#include <Arduino.h>
+#include <Led.h>
 #include <Temt.h>
 #include <Wire.h>
-#include <Led.h>
-#include <Arduino.h>
 
+#define I2C_ADDRESS_ESP32 8
 #define TEMT_THRESHOLD 1000 // to be calibrated
-#define DEBUG true
+#define DEBUG          true
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -13,8 +14,9 @@
 // 14         02
 //    13   15
 
-float angle;
-Led led;
+int angle;
+Led   led;
+uint8_t data[2];
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -29,14 +31,12 @@ Temt temts[10] = {
     Temt(25, -0.4, 1),
 };
 
+// Write the data to the I2C bus on request
 void request() {
-    int16_t angleToBeSent = angle;
-    byte    packet[2];
-    packet[0] = (angleToBeSent >> 8) & 0xFF;
-    packet[1] = angleToBeSent & 0xFF;
-    Wire.write(packet, 2);
+    Wire.write(data, sizeof(data));
 }
 
+// Set the color of the LED
 void led_color(int pin, int r, int g, int b, int w) {
     led.begin(pin, 10);
     for (int i = 0; i < 10; i++) {
@@ -48,39 +48,23 @@ void led_color(int pin, int r, int g, int b, int w) {
 void setup() {
     Serial.begin(115200);
 
-    Wire.begin(54); // Need to change address?
+    Wire.begin(I2C_ADDRESS_ESP32);
     Wire.onRequest(request);
 
-    led_color(18, 255, 0, 0, 0);
+    led_color(18, 255, 0, 0, 0); // Non-white to indicate power on
     delay(500);
-    led_color(18, 0, 0, 0, 0);
+    led_color(18, 0, 0, 0, 0); // Turn off the LED temporarily to blink
     delay(500);
-    led_color(18, 255, 255, 255, 255);
+    led_color(18, 255, 255, 255, 255); // White to indicate ready
 }
-
-/*
-
-Wire.requestFrom(52,2);
-byte packet[2];
-packet[1] = Wire.read();
-packet[2] = Wire.read();
-if (packet[1] == 0xFF) {
-    return 256 * packet[1] + packet[2];
-} else {
-    return packet[1]
-}
-
-// Need to make the part that detects the 65535 value when nothing it detected 
-// by the temts
-
-*/
 
 void loop() {
     // Reset the values
     float sumX = 0, sumY = 0;
-    bool canSeeLine = false;
-    angle = 65535; // Largest 16 bit number, used to indicate when there is no need to avoid the line
+    bool  canSeeLine = false;
+    static int angle;
 
+    // Read the values from the sensors
     for (int i = 0; i < 10; i++) {
         if (DEBUG) {
             Serial.print(temts[i].read());
@@ -93,11 +77,20 @@ void loop() {
         }
     }
 
+    // Calculate the angle
     if (sumX != 0 || sumY != 0) {
         canSeeLine = true;
         angle      = atan2f(-sumX, -sumY) / 3.14159265358979323846f * 180;
+        if (angle < 0) angle += 360; // Convert to 0-359 degrees
+    } else {
+        angle = 65535; // Largest 16 bit number indicating no need to avoid line
     }
 
+    // Send the data to the ESP32
+    data[0] = angle & 0xFF;
+    data[1] = (angle >> 8) & 0xFF;
+
+    // Print the data for debugging
     if (DEBUG) {
         Serial.print(sumX);
         Serial.print("\t");
@@ -105,6 +98,8 @@ void loop() {
         Serial.print("\t");
         Serial.print(canSeeLine);
         Serial.print("\t");
-        Serial.println(angle);
+        Serial.print(angle);
     }
+
+    Serial.println();
 }

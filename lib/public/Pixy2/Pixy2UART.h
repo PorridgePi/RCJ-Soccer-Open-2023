@@ -20,6 +20,12 @@
 
 #include "TPixy2.h"
 #include "Arduino.h"
+#include <SoftwareSerial.h>
+
+#define PIXY_TX 8
+#define PIXY_RX 15
+
+SoftwareSerial PixySerial(PIXY_RX, PIXY_TX);
 
 #define PIXY_UART_BAUDRATE        19200
 
@@ -29,9 +35,9 @@ public:
   int8_t open(uint32_t arg)
   {
 	if (arg==PIXY_DEFAULT_ARGVAL)
-      Serial1.begin(PIXY_UART_BAUDRATE);
+      PixySerial.begin(PIXY_UART_BAUDRATE);
     else
-      Serial1.begin(arg);      
+      PixySerial.begin(arg);      
     return 0;
   }
 	
@@ -53,7 +59,7 @@ public:
       {
         if (j==200)
           return -1;
-	    c = Serial1.read();
+	    c = PixySerial.read();
         if (c>=0)
           break;
         delayMicroseconds(10);
@@ -68,7 +74,7 @@ public:
     
   int16_t send(uint8_t *buf, uint8_t len)
   {
-    Serial1.write(buf, len);
+    PixySerial.write(buf, len);
     return len;
   }
   	

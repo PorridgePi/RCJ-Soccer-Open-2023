@@ -56,8 +56,6 @@
 #define PIXY_RCS_CENTER_POS                  ((PIXY_RCS_MAX_POS-PIXY_RCS_MIN_POS)/2)
 
 #include "Pixy2CCC.h"
-#include "Pixy2Line.h"
-#include "Pixy2Video.h"
 
 struct Version
 {
@@ -101,14 +99,6 @@ public:
   Pixy2CCC<LinkType> ccc;
   friend class Pixy2CCC<LinkType>;
 
-  // Line following
-  Pixy2Line<LinkType> line;
-  friend class Pixy2Line<LinkType>;
-
-  // Video
-  Pixy2Video<LinkType> video;
-  friend class Pixy2Video<LinkType>;
-  
   LinkType m_link;
   
 private:
@@ -124,7 +114,7 @@ private:
 };
 
 
-template <class LinkType> TPixy2<LinkType>::TPixy2() : ccc(this), line(this), video(this)
+template <class LinkType> TPixy2<LinkType>::TPixy2() : ccc(this)
 {
   // allocate buffer space for send/receive
   m_buf = (uint8_t *)malloc(PIXY_BUFFERSIZE);

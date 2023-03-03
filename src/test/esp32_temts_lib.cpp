@@ -1,5 +1,5 @@
-#include <Temt.h>
 #include <Arduino.h>
+#include <Temt.h>
 
 // PIN, X POSITION, Y POSITION
 //    25   33
