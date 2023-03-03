@@ -5,7 +5,8 @@
 
 #define I2C_ADDRESS_ESP32 8
 #define TEMT_THRESHOLD 1000 // to be calibrated
-#define DEBUG          true
+#define DEBUG          false
+#define DEBUG_LOOP_TIME true
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -17,6 +18,7 @@
 int angle;
 Led   led;
 uint8_t data[2];
+unsigned long loopStartMicros;
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -59,6 +61,8 @@ void setup() {
 }
 
 void loop() {
+    loopStartMicros = micros(); // For debugging loop time
+
     // Reset the values
     float sumX = 0, sumY = 0;
     bool  canSeeLine = false;
@@ -99,7 +103,13 @@ void loop() {
         Serial.print(canSeeLine);
         Serial.print("\t");
         Serial.print(angle);
+        Serial.print("\t");
     }
 
-    Serial.println();
+    if (DEBUG_LOOP_TIME) {
+        Serial.print((float)(micros() - loopStartMicros) / 1000);
+        Serial.print('\t');
+    }
+
+    if (DEBUG || DEBUG_LOOP_TIME) Serial.println();
 }
