@@ -15,10 +15,9 @@
 // 14         02
 //    13   15
 
-int           angle;
 Led           led;
-uint8_t       data[2];
 unsigned long loopStartMicros;
+bool isOnLine;
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -33,11 +32,6 @@ Temt temts[10] = {
     Temt(25, -0.4, 1),
 };
 
-// Write the data to the I2C bus on request
-void request() {
-    Wire.write(data, sizeof(data));
-}
-
 // Set the color of the LED
 void led_color(int pin, int r, int g, int b, int w) {
     led.begin(pin, 10);
@@ -49,9 +43,7 @@ void led_color(int pin, int r, int g, int b, int w) {
 
 void setup() {
     Serial.begin(115200);
-
-    Wire.begin(I2C_ADDRESS_ESP32);
-    Wire.onRequest(request);
+    pinMode(22, OUTPUT);
 
     led_color(18, 255, 0, 0, 0); // Non-white to indicate power on
     delay(500);
@@ -62,11 +54,7 @@ void setup() {
 
 void loop() {
     loopStartMicros = micros(); // For debugging loop time
-
-    // Reset the values
-    float      sumX = 0, sumY = 0;
-    bool       canSeeLine = false;
-    static int angle;
+    isOnLine = false;
 
     // Read the values from the sensors
     for (int i = 0; i < 10; i++) {
@@ -76,34 +64,15 @@ void loop() {
         }
 
         if (temts[i].read() > TEMT_THRESHOLD) {
-            sumX += temts[i].X;
-            sumY += temts[i].Y;
+            isOnLine = true;
+            break;
         }
     }
 
-    // Calculate the angle
-    if (sumX != 0 || sumY != 0) {
-        canSeeLine = true;
-        angle      = atan2f(-sumX, -sumY) / 3.14159265358979323846f * 180;
-        if (angle < 0) angle += 360; // Convert to 0-359 degrees
+    if (isOnLine == true) {
+        digitalWrite(22, HIGH); // write SCL HIGH
     } else {
-        angle = 65535; // Largest 16 bit number indicating no need to avoid line
-    }
-
-    // Send the data to the ESP32
-    data[0] = angle & 0xFF;
-    data[1] = (angle >> 8) & 0xFF;
-
-    // Print the data for debugging
-    if (DEBUG) {
-        Serial.print(sumX);
-        Serial.print("\t");
-        Serial.print(sumY);
-        Serial.print("\t");
-        Serial.print(canSeeLine);
-        Serial.print("\t");
-        Serial.print(angle);
-        Serial.print("\t");
+        digitalWrite(22, LOW); // write SCL HIGH
     }
 
     if (DEBUG_LOOP_TIME) {
