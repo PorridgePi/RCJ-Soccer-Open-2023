@@ -49,8 +49,8 @@ class Motor {
         float rotationCommand =
             sign(deltaAngle(currentOrientation, targetOrientation));
         float command = _multiplier * (translationCommand + rotationCommand);
-        digitalWrite(_pin0, constrain(command, 0, 255));
-        digitalWrite(_pin1, abs(constrain(command, -255, 0)));
+        analogWrite(_pin0, constrain(command, 0, 255));
+        analogWrite(_pin1, abs(constrain(command, -255, 0)));
 
         // JUST FOR DEBUGGING: remember to change function to method
         return command;
