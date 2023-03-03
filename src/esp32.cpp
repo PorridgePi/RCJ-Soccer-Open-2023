@@ -13,8 +13,9 @@
 // 14         02
 //    13   15
 
-float angle;
+int angle;
 Led   led;
+uint8_t data[2];
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -30,11 +31,7 @@ Temt temts[10] = {
 };
 
 void request() {
-    int16_t angleToBeSent = angle;
-    byte    packet[2];
-    packet[0] = (angleToBeSent >> 8) & 0xFF;
-    packet[1] = angleToBeSent & 0xFF;
-    Wire.write(packet, 2);
+    Wire.write(data, sizeof(data));
 }
 
 void led_color(int pin, int r, int g, int b, int w) {
@@ -48,7 +45,7 @@ void led_color(int pin, int r, int g, int b, int w) {
 void setup() {
     Serial.begin(115200);
 
-    Wire.begin(54); // Need to change address?
+    Wire.begin(8); // Need to change address?
     Wire.onRequest(request);
 
     led_color(18, 255, 0, 0, 0);
@@ -78,7 +75,7 @@ void loop() {
     // Reset the values
     float sumX = 0, sumY = 0;
     bool  canSeeLine = false;
-    angle            = 65535; // Largest 16 bit number, used to indicate when there is no need to avoid the line
+    static int angle;
 
     for (int i = 0; i < 10; i++) {
         if (DEBUG) {
@@ -95,7 +92,15 @@ void loop() {
     if (sumX != 0 || sumY != 0) {
         canSeeLine = true;
         angle      = atan2f(-sumX, -sumY) / 3.14159265358979323846f * 180;
+        if (angle < 0) {
+            angle += 360;
+        }
+    } else {
+        angle = 65535; // Largest 16 bit number, used to indicate when there is no need to avoid the line
     }
+
+    data[0] = angle & 0xFF;
+    data[1] = (angle >> 8) & 0xFF;
 
     if (DEBUG) {
         Serial.print(sumX);
@@ -104,6 +109,8 @@ void loop() {
         Serial.print("\t");
         Serial.print(canSeeLine);
         Serial.print("\t");
-        Serial.println(angle);
+        Serial.print(angle);
     }
+
+    Serial.println();
 }
