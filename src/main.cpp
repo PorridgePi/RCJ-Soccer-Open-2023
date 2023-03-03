@@ -1,12 +1,7 @@
 #include <Arduino.h>
+#include <Definitions.h>
 
 #define DEBUG true
-
-// Thresholds
-#define LIGHT_GATE_THRESHOLD 400
-
-// Pins
-#define LIGHT_GATE_PIN A2
 
 bool isBallInGate() {
     if (analogRead(LIGHT_GATE_PIN) < LIGHT_GATE_THRESHOLD) {

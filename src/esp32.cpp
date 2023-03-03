@@ -2,8 +2,8 @@
 #include <Led.h>
 #include <Temt.h>
 #include <Wire.h>
+#include <Definitions.h>
 
-#define I2C_ADDRESS_ESP32 8
 #define TEMT_THRESHOLD    1000 // to be calibrated
 #define DEBUG             false
 #define DEBUG_LOOP_TIME   true
