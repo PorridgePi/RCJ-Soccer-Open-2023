@@ -1,5 +1,5 @@
-#ifndef KICKER_H
-#define KICKER_H
+#ifndef LIDAR_H
+#define LIDAR_H
 
 #include <Arduino.h>
 #include <Wire.h>
