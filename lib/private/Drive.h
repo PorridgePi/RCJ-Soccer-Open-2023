@@ -32,10 +32,8 @@ float deltaAngle(float current, float target) { // Gets the smallest difference 
 
 class Drive {
     public:
-        Drive(float ANGL, float MULT, int PIN0, int PIN1) :
-            _angle(ANGL), _multiplier(MULT), _pin0(PIN0), _pin1(PIN1) {
-            pinMode(_pin0, OUTPUT);
-            pinMode(_pin1, OUTPUT);
+        Drive(float ANGL, float MULT) :
+            _angle(ANGL), _multiplier(MULT) {
         }
 
         float drive() {
@@ -47,8 +45,9 @@ class Drive {
             float rotationCommand =
                 sign(deltaAngle(currentOrientation, targetOrientation));
             float command = _multiplier * (translationCommand + rotationCommand);
-            analogWrite(_pin0, constrain(command, 0, 255));
-            analogWrite(_pin1, abs(constrain(command, -255, 0)));
+            
+            // analogWrite(_pin0, constrain(command, 0, 255));
+            // analogWrite(_pin1, abs(constrain(command, -255, 0)));
 
             // JUST FOR DEBUGGING: remember to change function to method
             return command;
@@ -57,8 +56,6 @@ class Drive {
     private:
         const int   _angle;
         const float _multiplier;
-        const int   _pin0;
-        const int   _pin1;
 };
 
 #endif
