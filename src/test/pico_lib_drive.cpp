@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Drive.h>
 
-Motor A(45, 1, 12, 13);
+Drive A(45, 1, 12, 13);
 
 void setup() {
     pinMode(PIN_LED, OUTPUT);
@@ -10,15 +10,15 @@ void setup() {
 
 void loop() {
     // for debugging:
-    if (Velocity.direction > 360) {
-        Velocity.direction = 0;
+    if (velocity.direction > 360) {
+        velocity.direction = 0;
     } else {
-        Velocity.direction++;
-        Velocity.direction++;
-        Velocity.direction++;
+        velocity.direction++;
+        velocity.direction++;
+        velocity.direction++;
     }
-    Serial.println(Velocity.direction);
-    Serial.println(Velocity.magnitude);
+    Serial.println(velocity.direction);
+    Serial.println(velocity.magnitude);
     Serial.println(A.drive());
     digitalWrite(PIN_LED, HIGH);
     delay(10);
