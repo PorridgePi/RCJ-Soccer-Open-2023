@@ -4,7 +4,7 @@
 #define USE_MULTICORE false
 
 #define DEBUG_DELAY false
-#define DEBUG_LED false
+#define DEBUG_LED   false
 
 #define BUFFER_LENGTH 50
 
@@ -12,15 +12,15 @@
 #define PIXY_RX 15
 SoftwareSerial PixySerial(PIXY_RX, PIXY_TX);
 
-bool newData = false;
+bool newData        = false;
 bool recvInProgress = false;
 
 int signature, x, y, width, height;
 
-int i = 2;
-int r = 0;
-int length = 4;
-int prevNum = 0;
+int i                 = 2;
+int r                 = 0;
+int length            = 4;
+int prevNum           = 0;
 int blockLastDetected = 0;
 
 int buffer[BUFFER_LENGTH];
@@ -76,7 +76,7 @@ void pixyReadData() {
 
     while (PixySerial.available() > 0 && newData == false) {
         prevNum = r;
-        r = PixySerial.read();
+        r       = PixySerial.read();
 
         if (recvInProgress == true) {
             if (i == 3) {
@@ -90,13 +90,13 @@ void pixyReadData() {
                 i++;
             } else {
                 recvInProgress = false;
-                i = 2;
-                length = 4;
-                newData = true;
+                i              = 2;
+                length         = 4;
+                newData        = true;
             }
         } else if (r == 193 && prevNum == 175) {
-            buffer[0] = 175;
-            buffer[1] = 193;
+            buffer[0]      = 175;
+            buffer[1]      = 193;
             recvInProgress = true;
         }
     }
@@ -105,7 +105,7 @@ void pixyReadData() {
 void loop() {
     long long time = micros();
 
-    if (! USE_MULTICORE) pixyReadData();
+    if (!USE_MULTICORE) pixyReadData();
     if (newData == true) {
         pixyParseData();
         memset(buffer, 0, sizeof(buffer));
@@ -117,7 +117,7 @@ void loop() {
     }
 
     printData();
-    Serial.print((float)(micros()-time)/1000);
+    Serial.print((float) (micros() - time) / 1000);
     Serial.println("ms");
     if (DEBUG_LED) digitalWrite(PIN_LED, LOW);
 }

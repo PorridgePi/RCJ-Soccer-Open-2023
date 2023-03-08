@@ -20,7 +20,7 @@ void setup() {
 
 void loop() {
     long long time = millis();
-    SPI1.beginTransaction(SPISettings(2*MHZ, MSBFIRST, SPI_MODE3));
+    SPI1.beginTransaction(SPISettings(2 * MHZ, MSBFIRST, SPI_MODE3));
     int tx_buffer[20] = {174, 193, 32, 2, 1, 1};
     int rx_buffer[20] = {};
     for (int i = 0; i < 6; i++) {
@@ -46,7 +46,7 @@ void loop() {
             Serial.print(object[n]);
             Serial.print(" ");
         }
-        // tunr led on 
+        // turn led on
         digitalWrite(PIN_LED, HIGH);
 
     } else {
