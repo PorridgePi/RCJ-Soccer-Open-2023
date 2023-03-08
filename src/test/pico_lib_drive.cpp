@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Drive.h>
 
-Drive A(45, 1);
+Drive A(45);
 
 void setup() {
     pinMode(PIN_LED, OUTPUT);
@@ -20,7 +20,7 @@ void loop() {
     Serial.print("Target Orientation: ");
     Serial.print(velocity.direction);
     Serial.print("\tSpeed: ");
-    Serial.print(velocity.magnitude);
+    Serial.print(velocity.speed);
     Serial.print("\tanalogWrite value / 255: ");
     Serial.println(A.drive());
 }

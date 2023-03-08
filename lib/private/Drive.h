@@ -2,15 +2,15 @@
 #define DRIVE_H
 
 #include <Arduino.h>
+#include <Definitions.h>
 
-const float rad = PI / 180;
 // float CurrentOrientation = 30; // updated to the IMU readings every frame;
 // Angle of the bot wrt the field float TargetOrientation = 0;
 float currentOrientation = 0;
 float targetOrientation  = 0;
 
 struct Velocity { // Current Position and Orientation; updated by Localisation
-    float magnitude = 10;
+    float speed = 10;
     float direction = 0;
 };
 
@@ -32,20 +32,19 @@ float deltaAngle(float current, float target) { // Gets the smallest difference 
 
 class Drive {
     public:
-        Drive(float ANGL, float MULT) :
-            _angle(ANGL), _multiplier(MULT) {
+        Drive(int ANGL) :
+            _motorAngle(ANGL) {
         }
 
         float drive() {
-            float directionInRadians        = (velocity.direction) * rad;
-            float x                         = velocity.magnitude * sinf(directionInRadians);
-            float y                         = velocity.magnitude * cosf(directionInRadians);
-            float motorOrientationInRadians = _angle * rad;
-            float translationCommand        = (cosf(motorOrientationInRadians) * x - sinf(motorOrientationInRadians) * y);
+            float directionInRadians = RAD(velocity.direction);
+            float x                  = velocity.speed * sinf(directionInRadians);
+            float y                  = velocity.speed * cosf(directionInRadians);
+            float translationCommand = (cosf(RAD(_motorAngle)) * x - sinf(RAD(_motorAngle)) * y);
             float rotationCommand =
                 sign(deltaAngle(currentOrientation, targetOrientation));
-            float command = _multiplier * (translationCommand + rotationCommand);
-            
+            float command = translationCommand + rotationCommand;
+
             // analogWrite(_pin0, constrain(command, 0, 255));
             // analogWrite(_pin1, abs(constrain(command, -255, 0)));
 
@@ -54,8 +53,7 @@ class Drive {
         }
     
     private:
-        const int   _angle;
-        const float _multiplier;
+        const int   _motorAngle;
 };
 
 #endif
