@@ -3,7 +3,7 @@
 
 #define MAX_SPEED 1.0
 
-Motor motor(22, 26, MAX_SPEED);
+Motor motor(26, 22, MAX_SPEED);
 
 void setup() {
     Serial.begin(115200);
