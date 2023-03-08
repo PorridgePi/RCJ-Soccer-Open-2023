@@ -1,10 +1,16 @@
 #include <Arduino.h>
 #include <Drive.h>
 
-Drive A(270); // wheel pointing to 0 degrees
+#define MAX_SPEED 1.0
 
-int targetAngle;
-int targetSpeed;
+Motor motorFR(0, 0, MAX_SPEED);
+Motor motorBR(0, 0, MAX_SPEED);
+Motor motorBL(0, 0, MAX_SPEED);
+Motor motorFL(0, 0, MAX_SPEED);
+
+Drive driveBase(motorFR, motorBR, motorBL, motorFL); // wheel pointing to 0 degrees
+
+int targetAngle, targetSpeed, rotationRate;
 
 void setup() {
     pinMode(PIN_LED, OUTPUT);
@@ -23,14 +29,7 @@ void loop() {
 
     targetAngle = 0;
     targetSpeed = 1;
+    rotationRate = -1;
 
-    A.setDirection(targetAngle);
-    A.setSpeed(targetSpeed);
-
-    Serial.print("Target Angle: ");
-    Serial.print(targetAngle);
-    Serial.print("\tSpeed: ");
-    Serial.print(targetSpeed);
-    Serial.print("\tanalogWrite value / 255: ");
-    Serial.println(A.drive());
+    driveBase.setDrive(targetSpeed, targetAngle, rotationRate);
 }
