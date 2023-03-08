@@ -3,7 +3,7 @@
 #define MOTOR_PIN0 22
 #define MOTOR_PIN1 26
 
-#define MAX_SPEED 0.5
+#define MAX_SPEED 1.0
 
 void setup() {
     Serial.begin(115200);
@@ -11,11 +11,10 @@ void setup() {
     pinMode(MOTOR_PIN1, OUTPUT);
 }
 
-int i = 0;
 float speed = 0.1;
 
 void loop() {
-    speed = sin(i++ / 1000.0);
+    speed = sin(millis() / 5000.0);
     Serial.print(speed);
     Serial.print("\t");
     speed = constrain(speed, -MAX_SPEED, MAX_SPEED);
