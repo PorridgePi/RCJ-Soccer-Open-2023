@@ -25,61 +25,33 @@ class Drive {
             speedFL = -speedY;
             speedBL = -speedX;
 
-
-            Serial.print("Before:\tspeedFR: ");
-            Serial.print(speedFR);
-            Serial.print("\tspeedBR: ");
-            Serial.print(speedBR);
-            Serial.print("\tspeedBL: ");
-            Serial.print(speedBL);
-            Serial.print("\tspeedFL: ");
-            Serial.print(speedFL);
-
             if (angle >= 45 && angle < 225) { // positive x (FR, BL)
                 if (rotationRate >= 0) { // clockwise
-                    Serial.print("\tBL+");
                     speedBL = speedBL * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
                 } else { // counterclockwise
-                    Serial.print("\tFR-");
                     speedFR = speedFR * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
                 }
             } else { // negative x (FR, BL)
                 if (rotationRate >= 0) { // clockwise
-                    Serial.print("\tFR+");
                     speedFR = speedFR * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
                 } else { // counterclockwise
-                    Serial.print("\tBL-");
                     speedBL = speedBL * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
                 }
             }
 
             if (angle >= 135 && angle < 315) { // negative y (FL, BR)
                 if (rotationRate >= 0) { // clockwise
-                    Serial.print("\tFL+");
                     speedFL = speedFL * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
                 } else { // counterclockwise
-                    Serial.print("\tBR-");
                     speedBR = speedBR * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
                 }
             } else { // positive y (FL, BR)
                 if (rotationRate >= 0) { // clockwise
-                    Serial.print("\tBR+");
                     speedBR = speedBR * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
                 } else { // counterclockwise
-                    Serial.print("\tFL-");
                     speedFL = speedFL * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
                 }
             }
-
-            Serial.print("\tAfter:\tspeedFR: ");
-            Serial.print(speedFR);
-            Serial.print("\tspeedBR: ");
-            Serial.print(speedBR);
-            Serial.print("\tspeedBL: ");
-            Serial.print(speedBL);
-            Serial.print("\tspeedFL: ");
-            Serial.print(speedFL);
-            Serial.println();
 
             _motorFL.setSpeed(speedFL);
             _motorFR.setSpeed(speedFR);
