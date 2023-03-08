@@ -3,6 +3,9 @@
 
 Drive A(270); // wheel pointing to 0 degrees
 
+int targetAngle;
+int targetSpeed;
+
 void setup() {
     pinMode(PIN_LED, OUTPUT);
     Serial.begin(9600);
@@ -18,14 +21,16 @@ void loop() {
     //     velocity.direction++;
     // }
 
-    velocity.direction = 0;
-    velocity.speed = 1;
+    targetAngle = 0;
+    targetSpeed = 1;
 
+    A.setDirection(targetAngle);
+    A.setSpeed(targetSpeed);
 
-    Serial.print("Target Orientation: ");
-    Serial.print(velocity.direction);
+    Serial.print("Target Angle: ");
+    Serial.print(targetAngle);
     Serial.print("\tSpeed: ");
-    Serial.print(velocity.speed);
+    Serial.print(targetSpeed);
     Serial.print("\tanalogWrite value / 255: ");
     Serial.println(A.drive());
 }
