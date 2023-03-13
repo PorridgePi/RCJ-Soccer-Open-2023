@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <Led.h>
+#include <FastLED.h>
 #include <Temt.h>
 #include <Wire.h>
 #include <Definitions.h>
@@ -7,6 +7,7 @@
 #define TEMT_THRESHOLD    1000 // to be calibrated
 #define DEBUG             false
 #define DEBUG_LOOP_TIME   true
+#define NUM_LEDS 10
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -15,9 +16,9 @@
 // 14         02
 //    13   15
 
-Led           led;
 unsigned long loopStartMicros;
 bool isOnLine;
+CRGB leds[NUM_LEDS];
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -32,24 +33,16 @@ Temt temts[10] = {
     Temt(25, -0.4, 1),
 };
 
-// Set the color of the LED
-void led_color(int pin, int r, int g, int b, int w) {
-    led.begin(pin, 10);
-    for (int i = 0; i < 10; i++) {
-        led.color(i, r, g, b, w);
-    }
-    led.show();
-}
-
 void setup() {
     Serial.begin(115200);
     pinMode(22, OUTPUT);
 
-    led_color(18, 255, 0, 0, 0); // Non-white to indicate power on
-    delay(500);
-    led_color(18, 0, 0, 0, 0); // Turn off the LED temporarily to blink
-    delay(500);
-    led_color(18, 255, 255, 255, 255); // White to indicate ready
+    FastLED.addLeds<SK6812, 18, GRB>(leds, NUM_LEDS);
+    FastLED.showColor(CRGB::White); // White to indicate power on
+    delay(250);
+    FastLED.showColor(CRGB::Black); // Turn off the LED temporarily to blink
+    delay(250);
+    FastLED.showColor(CRGB::White); // White to indicate ready
 }
 
 void loop() {

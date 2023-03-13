@@ -1,25 +1,19 @@
 #include <Arduino.h>
-#include <Led.h>
+#include <FastLED.h>
 #include <Temt.h>
 
-Led led;
-
-void led_color(int pin, int r, int g, int b, int w) {
-    led.begin(pin, 10);
-    for (int i = 0; i < 10; i++) {
-        led.color(i, r, g, b, w);
-    }
-    led.show();
-}
+#define NUM_LEDS 10
+CRGB leds[NUM_LEDS];
 
 void setup() {
     Serial.begin(115200);
 
-    led_color(18, 255, 0, 0, 0);
-    delay(500);
-    led_color(18, 0, 0, 0, 0);
-    delay(500);
-    led_color(18, 255, 255, 255, 255);
+    FastLED.addLeds<SK6812, 18, GRB>(leds, NUM_LEDS);
+    FastLED.showColor(CRGB::White);
+    delay(250);
+    FastLED.showColor(CRGB::Black);
+    delay(250);
+    FastLED.showColor(CRGB::White);
 }
 
 // PIN, X POSITION, Y POSITION
