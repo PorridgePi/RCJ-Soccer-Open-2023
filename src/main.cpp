@@ -13,9 +13,9 @@ Camera Pixy(PIXY_RX, PIXY_TX, 142, 118);
 
 unsigned long loopStartMicros;
 
-unsigned long long prevI2C = 0;
-int                temtAngle;
 int emptyLightGateThreshold;
+int ballAngle;
+int ballDistance;
 
 int calibrateLightGate() {
     delay(500);
@@ -38,6 +38,18 @@ bool isOnLine() {
     return digitalRead(BOTTOM_PLATE_PIN);
 }
 
+void ballTrack() {
+    if (ballAngle >= 0 && ballAngle < 90) {
+
+    } else if (ballAngle >= 90 && ballAngle < 180) {
+
+    } else if (ballAngle >= 180 && ballAngle < 270) {
+
+    } else if (ballAngle >= 270 && ballAngle < 360) {
+
+    }
+}
+
 void setup() {
     pinMode(PIN_LED, OUTPUT);
     digitalWrite(PIN_LED, HIGH); // turn on LED to indicate start of setup
@@ -54,8 +66,11 @@ void setup() {
 
 void loop() {
     loopStartMicros = micros();
+
     if (!USE_MULTICORE) Pixy.readData();
-    Pixy.isNewDataPresent();
+    Pixy.isNewDataPresent(); // checks if new data is present and parses it
+    ballAngle = Pixy.getBallAngle();
+    ballDistance = Pixy.getBallDistance();
 
     if (DEBUG_ON_LINE) {
         Serial.print(isOnLine()); Serial.print("\t");
@@ -66,8 +81,8 @@ void loop() {
         Serial.print(analogRead(LIGHT_GATE_PIN)); Serial.print("\t");
     }
     if (DEBUG_PRINT_PIXY) {
-        Serial.print(Pixy.getBallDistance()); Serial.print("\t");
-        Serial.print(Pixy.getBallAngle()); Serial.print("\t");
+        Serial.print(ballDistance); Serial.print("\t");
+        Serial.print(ballAngle); Serial.print("\t");
     } 
     if (DEBUG_LOOP_TIME) {
         Serial.print((float) (micros() - loopStartMicros) / 1000);
