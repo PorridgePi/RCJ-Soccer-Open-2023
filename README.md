@@ -4,7 +4,10 @@
 
 For Visual Studio Code:
 
-- Clone and open this repository in VSCode
+- Clone this repository: `git clone https://github.com/PorridgePi/RCJ-Soccer-Open-2023`
+- Change directory: `cd RCJ-Soccer-Open-2023/`
+- Initialise Git submodule(s): `git submodule update --init --recursive`
+- Open the repository in VSCode
 - Install the PlatformIO plugin
 - Use the PlatformIO plugin to compile and upload code onto the microcontrollers
 
@@ -14,6 +17,7 @@ For Visual Studio Code:
 - `lib/`: Libraries for components
     - `private/`: Our own libraries for components
     - `public/`: Libraries from other sources
+        - `fastled/`: Library for SK6812 LED - [FastLED/FastLED](https://github.com/fastled/fastled/)
         - `Led.h`: Library for SK6812 LED - [gitpeut/SK6812-RGBW-ESP32
 ](https://github.com/gitpeut/SK6812-RGBW-ESP32)
 - `scripts/`: Scripts for PlatformIO
