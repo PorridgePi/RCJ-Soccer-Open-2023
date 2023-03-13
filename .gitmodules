@@ -1,0 +1,3 @@
+[submodule "lib/public/fastled"]
+	path = lib/public/fastled
+	url = https://github.com/fastled/fastled/
