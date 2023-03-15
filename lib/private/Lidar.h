@@ -6,12 +6,16 @@
 
 class Lidar {
     public:
-        Lidar(int addr) :
-            _addr(addr) {
+        Lidar(int addr, int calibration = 0) :
+            _addr(addr), _calibration(calibration) {
                 // constructor
             };
 
-        float read() {
+        int read() {
+            return readRaw() + _calibration;
+        }
+
+        int readRaw() {
             Wire.beginTransmission(_addr); // start bit
             Wire.write(0x00); // tell tfluna which register to read from, this register is low dist
             Wire.endTransmission();     // end bit
@@ -19,7 +23,7 @@ class Lidar {
             return Wire.read();         // read the bit
         }
 
-        int get_FPS() {
+        int getFPS() {
             Wire.beginTransmission(_addr);
             Wire.write(0x26); // this register is low FPS
             Wire.endTransmission();
@@ -27,14 +31,14 @@ class Lidar {
             return Wire.read();
         }
 
-        void set_FPS(int fps) {
+        void setFPS(int fps) {
             Wire.beginTransmission(_addr);
             Wire.write(0x26);
             Wire.write(fps);
             Wire.endTransmission();
         }
 
-        void change_Address(int newaddr) {
+        void setAddress(int newaddr) {
             Wire.beginTransmission(_addr); // start bit
             Wire.write(0x22);              // this register is the slave address
             Wire.write(newaddr);           // write data, which is the new address
@@ -43,7 +47,7 @@ class Lidar {
         }
 
     private:
-        int _addr;
+        int _addr, _calibration;
 };
 
 #endif

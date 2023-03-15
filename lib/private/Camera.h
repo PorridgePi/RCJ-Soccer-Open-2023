@@ -89,8 +89,9 @@ class Camera : public SoftwareSerial {
             if (_signature == 1) {
                 int xDiff = _x - _xC;
                 int yDiff = _y - _yC;
-
-                int distance = 10 * sqrt(xDiff * xDiff + xDiff * xDiff);
+                
+                // max distance = 5 * 84 = 420 since max change is around 84 pixels
+                int distance = 5 * sqrt(xDiff * xDiff + yDiff * yDiff);
                 return distance;
             } else {
                 return -1;

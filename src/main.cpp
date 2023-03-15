@@ -6,10 +6,15 @@
 #define DEBUG true
 #define DEBUG_PRINT_LIGHT_GATE false
 #define DEBUG_PRINT_PIXY false
-#define DEBUG_LOOP_TIME true
+#define DEBUG_LOOP_TIME false
 #define DEBUG_ON_LINE false
 
-Camera Pixy(PIXY_RX, PIXY_TX, 142, 118);
+#define MAX_BALL_DIST_THRESHOLD 420
+#define MIN_BALL_DIST_THRESHOLD 150
+// #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
+#define BALL_FUNCTION_THRESHOLD 0.0004f
+
+Camera Pixy(PIXY_RX, PIXY_TX, 139, 104);
 
 unsigned long loopStartMicros;
 
@@ -37,17 +42,27 @@ bool isBallInGate() {
 bool isOnLine() {
     return digitalRead(BOTTOM_PLATE_PIN);
 }
-
+float moveAngle = 0;
 void ballTrack() {
-    if (ballAngle >= 0 && ballAngle < 90) {
+    // Move perpendicular to ball if near, move straight if far
 
-    } else if (ballAngle >= 90 && ballAngle < 180) {
+    if (ballAngle == -1) return; // no ball detected
 
-    } else if (ballAngle >= 180 && ballAngle < 270) {
+    float ballDistInCm = BALL_FUNCTION_THRESHOLD * ballDistance * ballDistance;
 
-    } else if (ballAngle >= 270 && ballAngle < 360) {
-
+    if (ballAngle >= 0 && ballAngle < 180) {
+        moveAngle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
+    } else if (ballAngle >= 180 && ballAngle < 360) {
+        moveAngle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8)));
     }
+
+    if (moveAngle < 0) moveAngle += 360;
+
+    Serial.print(ballAngle); Serial.print("\t");
+    Serial.print(ballDistance); Serial.print("\t");
+    Serial.print(ballDistInCm); Serial.print("\t");
+    Serial.print(moveAngle); Serial.print("\t");
+    Serial.println();
 }
 
 void setup() {
@@ -71,6 +86,8 @@ void loop() {
     Pixy.isNewDataPresent(); // checks if new data is present and parses it
     ballAngle = Pixy.getBallAngle();
     ballDistance = Pixy.getBallDistance();
+
+    ballTrack();
 
     if (DEBUG_ON_LINE) {
         Serial.print(isOnLine()); Serial.print("\t");
