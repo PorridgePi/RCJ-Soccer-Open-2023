@@ -2,6 +2,7 @@
 #include <Definitions.h>
 #include <Wire.h>
 #include <Camera.h>
+#include <Lidar.h>
 
 #define DEBUG true
 #define DEBUG_PRINT_LIGHT_GATE false
@@ -15,6 +16,12 @@
 #define BALL_FUNCTION_THRESHOLD 0.0004f
 
 Camera Pixy(PIXY_RX, PIXY_TX, 139, 104);
+
+int   frontDist, backDist, rightDist, leftDist;
+Lidar lidarFront(0x12, -5);
+Lidar lidarRight(0x13, +4);
+Lidar lidarBack(0x11, +5);
+Lidar lidarLeft(0x10, +4);
 
 unsigned long loopStartMicros;
 
@@ -42,7 +49,9 @@ bool isBallInGate() {
 bool isOnLine() {
     return digitalRead(BOTTOM_PLATE_PIN);
 }
+
 float moveAngle = 0;
+
 void ballTrack() {
     // Move perpendicular to ball if near, move straight if far
 
@@ -65,6 +74,27 @@ void ballTrack() {
     Serial.println();
 }
 
+void localisation() {
+    int front, right, back, left, x, y;
+
+    front = lidarFront.read();
+    right = lidarRight.read();
+    back = lidarBack.read();
+    left = lidarLeft.read();
+
+    // field width = 182cm, field length = 243cm
+    x = (left + 182 - right) / 2;
+    y = (front + 243 - back) / 2;
+
+    Serial.print(x); Serial.print("\t");
+    Serial.print(y); Serial.print("\t");
+    Serial.print(front); Serial.print("\t");
+    Serial.print(right); Serial.print("\t");
+    Serial.print(back); Serial.print("\t");
+    Serial.print(left); Serial.print("\t");
+    Serial.println();
+}
+
 void setup() {
     pinMode(PIN_LED, OUTPUT);
     digitalWrite(PIN_LED, HIGH); // turn on LED to indicate start of setup
@@ -74,6 +104,11 @@ void setup() {
 
     Serial.begin(9600);
     Pixy.begin(19200);
+
+    // I2C for LiDAR
+    Wire.setSCL(13);
+    Wire.setSDA(12);
+    Wire.begin();
 
     emptyLightGateThreshold = calibrateLightGate();
     digitalWrite(PIN_LED, LOW); // turn off LED to indicate end of setup
@@ -88,6 +123,7 @@ void loop() {
     ballDistance = Pixy.getBallDistance();
 
     ballTrack();
+    localisation();
 
     if (DEBUG_ON_LINE) {
         Serial.print(isOnLine()); Serial.print("\t");
