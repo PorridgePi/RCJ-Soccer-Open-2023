@@ -6,10 +6,14 @@
 
 class Lidar {
     public:
-        Lidar(int addr) :
-            _addr(addr) {
+        Lidar(int addr, int calibration = 0) :
+            _addr(addr), _calibration(calibration) {
                 // constructor
             };
+
+        int read() {
+            return readRaw() + _calibration;
+        }
 
         int readRaw() {
             Wire.beginTransmission(_addr); // start bit
@@ -43,7 +47,7 @@ class Lidar {
         }
 
     private:
-        int _addr;
+        int _addr, _calibration;
 };
 
 #endif
