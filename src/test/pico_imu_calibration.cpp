@@ -1,0 +1,35 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <IMU.h>
+
+IMU imu(0x1E);
+
+#include <Drive.h>
+#define MAX_SPEED 0.5
+Motor motorFR(21, 20, MAX_SPEED); // top left JST, top right motor
+Motor motorBR(26, 22, MAX_SPEED); // bottom left JST, bottom right motor
+Motor motorBL(3, 7, MAX_SPEED);  // bottom right JST, bottom left motor
+Motor motorFL(11, 9, MAX_SPEED); // top right JST, top left motor
+
+Drive driveBase(motorFR, motorBR, motorBL, motorFL);
+
+void setup(){
+    Serial.begin(9600);
+
+    Wire.setSCL(13);
+    Wire.setSDA(12);
+    Wire.begin();
+
+    imu.init();
+
+    imu.setCalibration(159,32,516,530,-53);
+    //imu.tare();
+
+
+} 
+
+void loop() {
+    //driveBase.setDrive(0,0,0.2);
+    imu.printRaw();
+    delay(100);
+}

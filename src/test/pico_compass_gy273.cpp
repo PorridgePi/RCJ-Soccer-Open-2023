@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <Wire.h>
-
+#include <IMU.h>
 #include <Drive.h>
+#include <Lidar.h>
 
 #define MAX_SPEED 0.5
 
@@ -10,57 +11,61 @@ Motor motorBR(26, 22, MAX_SPEED); // bottom left JST, bottom right motor
 Motor motorBL(3, 7, MAX_SPEED);  // bottom right JST, bottom left motor
 Motor motorFL(11, 9, MAX_SPEED); // top right JST, top left motor
 
-
 Drive driveBase(motorFR, motorBR, motorBL, motorFL);
+
+int   frontDist, backDist, rightDist, leftDist;
+Lidar lidarFront(0x12, -5);
+Lidar lidarRight(0x13, +4);
+Lidar lidarBack(0x11, +5);
+Lidar lidarLeft(0x10, +4);
+
+unsigned long timestamp;
+int previousOrientation;
+
+int x,y;
 
 float targetSpeed, rotationRate;
 
-#define HMC388L_ADDRESS 0x1E
-
-int mag[3];
+IMU imu(0x1E);
 
 float targetAngle;
 float moveAngle;
 
+void updatePosition() {
+    // field width = 182cm, field length = 243cm
+    x = (lidarLeft.read() - lidarRight.read());
+    y = (lidarFront.read() - lidarBack.read());
+}
+
 void setup() {
     Serial.begin(9600);
-    Wire.setSCL(5);
-    Wire.setSDA(4);
+    Wire.setSCL(13);
+    Wire.setSDA(12);
     Wire.begin();
 
-    Wire.beginTransmission(HMC388L_ADDRESS);
-    Wire.write(0x02);
-    Wire.write(0x00);
-    Wire.endTransmission();
+    imu.setCalibration(159,32,516,530,-53);
 
+    imu.init();
+    
+    imu.tare();
+
+    timestamp = micros();
      //targetAngle = atan2(mag[0], mag[1]) / PI * 180;
 }
 
 void loop() {
-    bool isOnLine = digitalRead(1);
-    if (!isOnLine) {
-        Wire.beginTransmission(HMC388L_ADDRESS);
-    Wire.write(0x03); // select register 3, X MSB register
-    Wire.endTransmission();
+    //bool isOnLine = digitalRead(1);
 
-    Wire.requestFrom(HMC388L_ADDRESS, 6);
-    if (Wire.available() >= 6) {
-        int buff[6];
-        for (unsigned int i = 0; i < 6; i++) {
-            buff[i] = Wire.read();
-        }
-        mag[0] = -1 * (int16_t) (((((uint16_t) buff[4]) << 8) | buff[5])); // X axis (internal sensor -y axis)
-        mag[1] = -1 * (int16_t) (((((uint16_t) buff[0]) << 8) | buff[1])); // Y axis (internal sensor -x axis)
-        mag[2] = -1 * (int16_t) (((((uint16_t) buff[2]) << 8) | buff[3])); // Z axis (internal sensor -z axis)
-    }
-    float a = atan2(mag[0], mag[1]) / PI * 180;
-    if (targetAngle == 0) {
-        targetAngle = a;
-    }
+    driveBase.setDrive(0.3, 0, constrain(-imu.readAngle()/45,-0.5,0.5));
+
+    //updatePosition();
+    /*
+    if (!isOnLine) {
     targetSpeed = 0.3;// rotationRate = 0;
     //moveAngle = 
-    driveBase.setDrive(targetSpeed, 0, constrain((a-targetAngle)/90,-1,1));
+    driveBase.setDrive(targetSpeed, 0, constrain(-(imu.readAngle())/90,-1,1));
     } else {
-        driveBase.setDrive(1, 180, 0);
+        driveBase.setDrive(0.5, 180, 0);
     }
+    */
     }
