@@ -20,7 +20,6 @@ Lidar lidarBack(0x11, +5);
 Lidar lidarLeft(0x10, +4);
 
 unsigned long timestamp;
-int previousOrientation;
 
 int x,y;
 
@@ -30,13 +29,14 @@ IMU imu(0x1E);
 
 float targetAngle;
 float moveAngle;
-
+/*
 void updatePosition() {
     // field width = 182cm, field length = 243cm
+    //Serial.println(lidarBack.read());
     x = (lidarLeft.read() - lidarRight.read());
     y = (lidarFront.read() - lidarBack.read());
 }
-
+*/
 void setup() {
     Serial.begin(9600);
     Wire.setSCL(13);
@@ -48,16 +48,12 @@ void setup() {
     imu.init();
     
     imu.tare();
-
-    timestamp = micros();
      //targetAngle = atan2(mag[0], mag[1]) / PI * 180;
 }
 
 void loop() {
     //bool isOnLine = digitalRead(1);
-
-    driveBase.setDrive(0.3, 0, constrain(-imu.readAngle()/45,-0.5,0.5));
-
+    driveBase.setDrive(0.3, 0, constrain(-imu.readAngle()/45,-0.3,0.3));
     //updatePosition();
     /*
     if (!isOnLine) {

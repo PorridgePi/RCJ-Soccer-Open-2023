@@ -10,8 +10,8 @@ class Drive {
         Drive(Motor &motorFR, Motor &motorBR, Motor &motorBL, Motor &motorFL) : _motorFR(motorFR), _motorBR(motorBR), _motorBL(motorBL), _motorFL(motorFL) {}
 
         void setDrive(float speed, int angle, float rotationRate) {
-            speed = constrain(speed, -1, 1);
             rotationRate = constrain(rotationRate, -1, 1);
+            speed = constrain(speed, -1, 1) * (1-abs(rotationRate));
             // when rotationRate == 0, bot moves straight
             // when rotationRate == 1, bot rotates clockwise on the spot
             
@@ -25,6 +25,22 @@ class Drive {
             speedFL = -speedY;
             speedBL = -speedX;
 
+
+            //Check if any of the wheel's speed exceeds ± 1,
+
+            //if yes, find the wheel's speed that exceeded the most,
+            float exceeded = 0;
+            exceeded = max(abs(speedBL+rotationRate)-1, exceeded);
+            exceeded = max(abs(speedFL+rotationRate)-1, exceeded);
+            exceeded = max(abs(speedBR+rotationRate)-1, exceeded);
+            exceeded = max(abs(speedFR+rotationRate)-1, exceeded);
+
+            
+
+
+            //divide all the movement components by the amount needed such that it does not exceed ±1
+
+            /*
             if (angle >= 45 && angle < 225) { // positive x (FR, BL)
                 if (rotationRate >= 0) { // clockwise
                     speedBL = speedBL * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
@@ -51,14 +67,14 @@ class Drive {
                 } else { // counterclockwise
                     speedFL = speedFL * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
                 }
-            }
+            }*/
 
-            _motorFL.setSpeed(speedFL);
-            _motorFR.setSpeed(speedFR);
-            _motorBL.setSpeed(speedBL);
-            _motorBR.setSpeed(speedBR);
-        }
-
+            _motorFL.setSpeed(speedFL+rotationRate);
+            _motorFR.setSpeed(speedFR+rotationRate);
+            _motorBL.setSpeed(speedBL+rotationRate);
+            _motorBR.setSpeed(speedBR+rotationRate);
+        };
+        
     private:
         Motor _motorFL, _motorFR, _motorBL, _motorBR;
 };
