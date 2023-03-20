@@ -2,6 +2,7 @@
 #define IMU_H
 
 #include <Arduino.h>
+#include <Definitions.h>
 #include <Wire.h>
 
 class IMU {
@@ -18,12 +19,15 @@ class IMU {
         };
 
         void tare() {
-            _zeroError = readAngle() + _zeroError; //Account for the subtraction of the zero error
-        }
-        
-        float readAngle() {
             _update();
-            return atan2(_mag[0], _mag[1]) / PI * 180 - _zeroError;
+            _zeroError = DEG(atan2(_mag[0], _mag[1])); //Account for the subtraction of the zero error
+        }   
+        
+        int readAngle() {
+            _update();
+            int angle = DEG(atan2(_mag[0], _mag[1])) - _zeroError;
+
+            return angle > 0 ? angle % 360 : angle % 360 + 360;
         }
 
         void printRaw() {
@@ -48,7 +52,7 @@ class IMU {
     private:
         const int _addr;
         int _calibration[5]; //[x,y,a,b,c]
-        float _zeroError;
+        int _zeroError;
         bool _initialised = false;
         int _mag[2];
 
@@ -93,6 +97,7 @@ class IMU {
                     _mag[0] = j[0];
                     _mag[1] = j[1];
                 }
+                _mag[0] *= -1; //Since imu is upside down 
       };
         };
 };
