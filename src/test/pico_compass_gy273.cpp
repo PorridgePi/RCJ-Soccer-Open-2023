@@ -67,15 +67,19 @@ void setup() {
 }
 
 void loop() {
+    
+    float ori = imu.readAngle();
     //bool isOnLine = digitalRead(1);
-    driveBase.setDrive(0.3, 45+imu.readAngle(), 0);
-    delay(500);
-    driveBase.setDrive(0.3, 135+imu.readAngle(), 0);
-    delay(500);
-    driveBase.setDrive(0.3, 225+imu.readAngle(), 0);
-    delay(500);
-    driveBase.setDrive(0.3, 315+imu.readAngle(), 0);
-    delay(500);
+    float rotateAngle = ori <= 180 ? ori : ori - 360; // from -180 to 180
+    
+    Serial.print(rotateAngle);
+    Serial.print("\t");
+    Serial.println(ori);
+
+    // For Yikun's Drive lib
+    // driveBase.setDrive(0.5, floor((millis()%4000)/1000)*90 + rotateAngle, constrain(-rotateAngle/45, -1, 1));
+    driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(rotateAngle/180, -0.1, 0.1));
+    
     //updatePosition();
     /*
     if (!isOnLine) {
