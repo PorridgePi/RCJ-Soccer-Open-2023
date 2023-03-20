@@ -29,13 +29,20 @@ class Drive {
             //Check if any of the wheel's speed exceeds ± 1,
 
             //if yes, find the wheel's speed that exceeded the most,
-            float exceeded = 0;
-            exceeded = max(abs(speedBL+rotationRate)-1, exceeded);
-            exceeded = max(abs(speedFL+rotationRate)-1, exceeded);
-            exceeded = max(abs(speedBR+rotationRate)-1, exceeded);
-            exceeded = max(abs(speedFR+rotationRate)-1, exceeded);
+            float maxSpeed = max(abs(speedX),abs(speedY));
+            float absRotation =  abs(rotationRate);
+            if (maxSpeed + absRotation > 1) {
+                float k = (1 - absRotation) / maxSpeed;
+                speedFR *= k;
+                speedFL *= k;
+                speedBR *= k;
+                speedBR *= k;
+            }
 
-            
+            speedFR += rotationRate;
+            speedFL += rotationRate;
+            speedBR += rotationRate;
+            speedBR += rotationRate;
 
 
             //divide all the movement components by the amount needed such that it does not exceed ±1

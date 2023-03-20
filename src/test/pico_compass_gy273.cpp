@@ -29,14 +29,29 @@ IMU imu(0x1E);
 
 float targetAngle;
 float moveAngle;
-/*
+
 void updatePosition() {
-    // field width = 182cm, field length = 243cm
-    //Serial.println(lidarBack.read());
-    x = (lidarLeft.read() - lidarRight.read());
-    y = (lidarFront.read() - lidarBack.read());
-}
+    /*
+    Serial.print("Front: ");
+    Serial.print(lidarFront.read());
+
+    Serial.print("\tBack: ");
+    Serial.print(lidarBack.read());
+
+    Serial.print("\tRight: ");
+    Serial.print(lidarRight.read());
+
+    Serial.print("\tLeft: ");
+    Serial.print(lidarLeft.read());
 */
+
+    x = (lidarLeft.read() - lidarRight.read())/2;
+    y = (122 - lidarBack.read());
+    Serial.print(x);
+    Serial.print("\t");
+    Serial.println(y);
+}
+
 void setup() {
     Serial.begin(9600);
     Wire.setSCL(13);
@@ -53,7 +68,14 @@ void setup() {
 
 void loop() {
     //bool isOnLine = digitalRead(1);
-    driveBase.setDrive(0.3, 0, constrain(-imu.readAngle()/45,-0.3,0.3));
+    driveBase.setDrive(0.3, 45+imu.readAngle(), 0);
+    delay(500);
+    driveBase.setDrive(0.3, 135+imu.readAngle(), 0);
+    delay(500);
+    driveBase.setDrive(0.3, 225+imu.readAngle(), 0);
+    delay(500);
+    driveBase.setDrive(0.3, 315+imu.readAngle(), 0);
+    delay(500);
     //updatePosition();
     /*
     if (!isOnLine) {

@@ -153,7 +153,7 @@ void loop() {
     //ballTrack();
     //localisation();
 
-    driveBase.setDrive(0,0,constrain(currentOrientation/90,-1,1));
+    driveBase.setDrive(0,0,constrain(currentOrientation/180,-0.5,0.5));
 
     if (DEBUG_ON_LINE) {
         Serial.print(isOnLine()); Serial.print("\t");

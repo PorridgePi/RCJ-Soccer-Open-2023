@@ -16,15 +16,21 @@ class Lidar {
         }
 
         int readRaw() {
-            unsigned int timeStart = millis();
+            
             Wire.beginTransmission(_addr); // start bit
             Wire.write(0x00); // tell tfluna which register to read from, this register is low dist
+
+            
+            //unsigned int timeStart = millis();
             Wire.endTransmission();     // end bit
+            //Serial.print(millis()-timeStart);
+            //Wire.endTransmission() and Wire.requestFrom() are timing out?
+
             Wire.requestFrom(_addr, 1); // request 1 bit
             int response = Wire.read();         // read the bit
-            Serial.print(millis()-timeStart);
-            Serial.print("\t");
-            Serial.println(response);
+            
+            //Serial.print("\t");
+            //Serial.println(response);
             return response;
         }
 
