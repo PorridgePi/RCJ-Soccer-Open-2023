@@ -59,30 +59,35 @@ void setup() {
     Serial.begin(9600);
     Wire.setSCL(13);
     Wire.setSDA(12);
+    Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
 
     imu.setCalibration(159, 32, 516, 530, -53);
-
     imu.init();
-
     imu.tare();
     // targetAngle = atan2(mag[0], mag[1]) / PI * 180;
 }
 
 void loop() {
+    unsigned long long now = micros();
+
     float ori = imu.readAngle();
     // bool isOnLine = digitalRead(1);
     float rotateAngle = ori <= 180 ? ori : ori - 360; // from -180 to 180
 
     // Serial.print(rotateAngle);
     // Serial.print("\t");
-    // Serial.println();
+
     // For Yikun's Drive lib
     // driveBase.setDrive(0.5, floor((millis()%4000)/1000)*90 + rotateAngle, constrain(-rotateAngle/45, -1, 1));
     // driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90-rotateAngle, constrain(pid.compute(0, -rotateAngle/180), -1, 1));
-    driveBase.setDrive(0.2, 0, constrain(pid.compute(0, -rotateAngle / 180), -1, 1));
+    
+    // WITHOUT PID
+    // driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(rotateAngle/360, -1, 1));
+    // WITH PID
+    driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(pid.compute(0, -rotateAngle / 180), -1, 1));
 
-    // updatePosition();
+    updatePosition();
     
     /*
     if (!isOnLine) {
@@ -93,4 +98,7 @@ void loop() {
         driveBase.setDrive(0.5, 180, 0);
     }
     */
-}
+
+    Serial.print((float)(micros()-now)/1000);
+    Serial.println();
+}   
