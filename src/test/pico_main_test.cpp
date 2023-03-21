@@ -4,6 +4,17 @@
 #include <Lidar.h>
 #include <PID.h>
 #include <Wire.h>
+#include <Camera.h>
+
+#define MAX_BALL_DIST_THRESHOLD 420
+#define MIN_BALL_DIST_THRESHOLD 150
+// #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
+#define BALL_FUNCTION_THRESHOLD 0.0004f
+
+// Camera Pixy(PIXY_RX, PIXY_TX, 139, 104);
+
+int ballAngle;
+int ballDistance;
 
 #define MAX_SPEED 0.5
 
@@ -27,6 +38,38 @@ float targetSpeed, rotationRate;
 
 float botHeading;
 IMU imu(0x1E);
+/*
+void updateBallData() {
+    Pixy.readData();
+    //Pixy.isNewDataPresent(); // checks if new data is present and parses it
+    ballAngle = Pixy.getBallAngle();
+    ballDistance = Pixy.getBallDistance();
+}
+*/
+void ballTrack() {
+    // Move perpendicular to ball if near, move straight if far
+
+    if (ballAngle == -1) return; // no ball detected
+
+    float ballDistInCm = BALL_FUNCTION_THRESHOLD * ballDistance * ballDistance;
+
+    /*
+    if (ballAngle >= 0 && ballAngle < 180) {
+        moveAngle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
+    } else if (ballAngle >= 180 && ballAngle < 360) {
+        moveAngle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8)));
+    }
+    if (moveAngle < 0) moveAngle += 360;
+    
+
+    Serial.print(ballAngle); Serial.print("\t");
+    Serial.print(ballDistance); Serial.print("\t");
+    Serial.print(ballDistInCm); Serial.print("\t");
+    Serial.print(moveAngle); Serial.print("\t");
+    Serial.println();
+    
+    */
+}
 
 void moveTo(int targetX, int targetY) {
     float moveAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
@@ -78,10 +121,12 @@ void updatePosition() {
 
 void setup() {
     Serial.begin(9600);
+    //Pixy.begin(19200);
     Wire.setSCL(13);
     Wire.setSDA(12);
     Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
+    
 
     imu.setCalibration(159, 32, 516, 530, -53);
     imu.init();
@@ -95,7 +140,12 @@ void loop() {
     // bool isOnLine = digitalRead(1);
     float rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
 
-    // Serial.print(rotateAngle);
+    // updateBallData();
+    // Serial.print(ballAngle);
+    // Serial.print("\t");
+    // Serial.println(ballDistance);
+    
+    // // Serial.print(rotateAngle);
     // Serial.print("\t");
 
     // For Yikun's Drive lib
@@ -107,18 +157,9 @@ void loop() {
     // WITH PID
     // driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(pid.compute(0, -rotateAngle / 180), -1, 1));
 
-    updatePosition();
-    moveTo(91, 122);
+    //updatePosition();
+    //moveTo(91, 122);
 
-    /*
-    if (!isOnLine) {
-    targetSpeed = 0.3;// rotationRate = 0;
-    driveBase.setDrive(targetSpeed, 0, constrain(-(imu.readAngle())/90,-1,1));
-    } else {
-        driveBase.setDrive(0.5, 180, 0);
-    }
-    */
-
-    Serial.print((float)(micros()-now)/1000);
-    Serial.println();
+    // Serial.print((float)(micros()-now)/1000);
+    // Serial.println();
 }   
