@@ -25,7 +25,6 @@ class Drive {
             speedFL = -speedY;
             speedBL = -speedX;
 
-
             //Check if any of the wheel's speed exceeds ± 1,
 
             //if yes, find the wheel's speed that exceeded the most,
@@ -44,42 +43,8 @@ class Drive {
             speedBR += rotationRate;
             speedBR += rotationRate;
 
-
             //divide all the movement components by the amount needed such that it does not exceed ±1
 
-            
-            // if (angle >= 45 && angle < 225) { // positive x (FR, BL)
-            //     if (rotationRate >= 0) { // clockwise
-            //         speedBL = speedBL * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
-            //     } else { // counterclockwise
-            //         speedFR = speedFR * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
-            //     }
-            // } else { // negative x (FR, BL)
-            //     if (rotationRate >= 0) { // clockwise
-            //         speedFR = speedFR * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
-            //     } else { // counterclockwise
-            //         speedBL = speedBL * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
-            //     }
-            // }
-
-            // if (angle >= 135 && angle < 315) { // negative y (FL, BR)
-            //     if (rotationRate >= 0) { // clockwise
-            //         speedFL = speedFL * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
-            //     } else { // counterclockwise
-            //         speedBR = speedBR * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
-            //     }
-            // } else { // positive y (FL, BR)
-            //     if (rotationRate >= 0) { // clockwise
-            //         speedBR = speedBR * (1 - 2 * rotationRate); // if rotationRate == 1, reverse direction
-            //     } else { // counterclockwise
-            //         speedFL = speedFL * (1 + 2 * rotationRate); // if rotationRate == -1, reverse direction
-            //     }
-            // }
-
-            // _motorFL.setSpeed(speedFL);
-            // _motorFR.setSpeed(speedFR);
-            // _motorBL.setSpeed(speedBL);
-            // _motorBR.setSpeed(speedBR);
             _motorFL.setSpeed(speedFL+rotationRate);
             _motorFR.setSpeed(speedFR+rotationRate);
             _motorBL.setSpeed(speedBL+rotationRate);
