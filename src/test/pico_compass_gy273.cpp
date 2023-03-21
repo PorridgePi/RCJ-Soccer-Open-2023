@@ -16,7 +16,7 @@ Motor motorFL(11, 9, MAX_SPEED);  // top right JST, top left motor
 
 Drive driveBase(motorFR, motorBR, motorBL, motorFL);
 
-int   frontDist, backDist, rightDist, leftDist;
+float   frontDist, backDist, rightDist, leftDist;
 int x, y;
 Lidar lidarFront(0x12, -5);
 Lidar lidarRight(0x13, +4);
@@ -25,34 +25,55 @@ Lidar lidarLeft(0x10, +4);
 
 float targetSpeed, rotationRate;
 
-float botHeading
+float botHeading;
 IMU imu(0x1E);
 
+void moveTo(int targetX, int targetY) {
+    float moveAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
+    moveAngle = moveAngle < 0 ? moveAngle + 360 : moveAngle;
+    float dist = hypot(targetX - x, targetY - y);
+
+    Serial.print("Move Angle: ");
+    Serial.print(moveAngle);
+    Serial.print("\t");
+
+    float rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
+    if (dist > 10) {
+        driveBase.setDrive(0.2, moveAngle, constrain(rotateAngle/360, -1, 1));
+    } else {
+        driveBase.setDrive(0, 0, 0);
+    }
+}
+
 void updatePosition() {
-    /*
+    float angle = botHeading <= 180 ? botHeading : 360 - botHeading;
+    frontDist = lidarFront.read() * cosf(RAD(angle));
+    backDist = lidarBack.read() * cosf(RAD(angle));
+    leftDist = lidarLeft.read() * cosf(RAD(angle));
+    rightDist = lidarRight.read() * cosf(RAD(angle));
+    
     Serial.print("Front: ");
-    Serial.print(lidarFront.read());
+    Serial.print(frontDist); Serial.print("\t");
 
-    Serial.print("\tBack: ");
-    Serial.print(lidarBack.read());
+    Serial.print("Back: ");
+    Serial.print(backDist); Serial.print("\t");
+    
+    Serial.print("Left: ");
+    Serial.print(leftDist); Serial.print("\t");
 
-    Serial.print("\tRight: ");
-    Serial.print(lidarRight.read());
+    Serial.print("Right: ");
+    Serial.print(rightDist); Serial.print("\t");
 
-    Serial.print("\tLeft: ");
-    Serial.print(lidarLeft.read());
-*/
+    Serial.print("Angle: ");
+    Serial.print(angle); Serial.print("\t");
 
-    frontDist = lidarFront.read();
-    backDist = lidarBack.read();
-    rightDist = lidarRight.read();
-    leftDist = lidarLeft.read();
+    x = (leftDist + 182 - rightDist)/2;
+    y = (frontDist + 243 - backDist)/2;
 
-    x = (lidarLeft.read() - lidarRight.read()) / 2;
-    y = (lidarFront.read() - lidarBack.read()) / 2;
     Serial.print(x);
     Serial.print("\t");
-    Serial.println(y);
+    Serial.print(y);
+    Serial.print("\t");
 }
 
 void setup() {
@@ -84,10 +105,11 @@ void loop() {
     // WITHOUT PID
     // driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(rotateAngle/360, -1, 1));
     // WITH PID
-    driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(pid.compute(0, -rotateAngle / 180), -1, 1));
+    // driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(pid.compute(0, -rotateAngle / 180), -1, 1));
 
     updatePosition();
-    
+    moveTo(91, 122);
+
     /*
     if (!isOnLine) {
     targetSpeed = 0.3;// rotationRate = 0;
