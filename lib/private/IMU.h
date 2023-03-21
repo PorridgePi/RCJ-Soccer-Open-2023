@@ -23,11 +23,11 @@ class IMU {
             _zeroError = DEG(atan2(_mag[0], _mag[1])); //Account for the subtraction of the zero error
         }   
         
-        int readAngle() {
+        float readAngle() {
             _update();
-            int angle = DEG(atan2(_mag[0], _mag[1])) - _zeroError;
+            float angle = DEG(atan2(_mag[0], _mag[1])) - _zeroError;
 
-            return angle > 0 ? angle % 360 : angle % 360 + 360;
+            return angle > 0 ? fmod(angle, 360) : fmod(angle, 360) + 360;
         }
 
         void printRaw() {
@@ -52,7 +52,7 @@ class IMU {
     private:
         const int _addr;
         int _calibration[5]; //[x,y,a,b,c]
-        int _zeroError;
+        float _zeroError;
         bool _initialised = false;
         int _mag[2];
 
