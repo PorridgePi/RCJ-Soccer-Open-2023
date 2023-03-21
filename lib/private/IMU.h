@@ -56,12 +56,16 @@ class IMU {
         int       _mag[2];
 
         void _update() {
-            if (!_initialised) {
-                init();
+            if (Wire.available() < 6) {
+                Wire.beginTransmission(_addr);
+                Wire.write(0x03); // select register 3, X MSB register
+                byte error = Wire.endTransmission();
+                if (error) {
+                    Serial.println("Error occured when writing");
+                    if (error == 5) Serial.println("It was a timeout");
+                }
             }
-            Wire.beginTransmission(_addr);
-            Wire.write(0x03); // select register 3, X MSB register
-            Wire.endTransmission();
+
 
             Wire.requestFrom(_addr, 6);
             if (Wire.available() >= 6) {
