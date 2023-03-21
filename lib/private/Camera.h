@@ -8,7 +8,9 @@
 
 class Camera : public SoftwareSerial {
     public:
-        Camera(pin_size_t rx, pin_size_t tx, int xC, int yC) : SoftwareSerial (rx, tx), _xC(xC), _yC(yC) {}
+        Camera(pin_size_t rx, pin_size_t tx, int xC, int yC) :
+            SoftwareSerial(rx, tx), _xC(xC), _yC(yC) {
+        }
 
         bool isNewDataPresent() {
             if (_newData == true) {
@@ -89,7 +91,7 @@ class Camera : public SoftwareSerial {
             if (_signature == 1) {
                 int xDiff = _x - _xC;
                 int yDiff = _y - _yC;
-                
+
                 // max distance = 5 * 84 = 420 since max change is around 84 pixels
                 int distance = 5 * hypot(xDiff, yDiff);
                 return distance;
@@ -105,7 +107,7 @@ class Camera : public SoftwareSerial {
 
                 int angle = atan2(yDiff, xDiff) * 180 / PI + 90;
                 if (angle < 0) angle += 360; // make sure angle is positive
-                angle = 360 - angle;  // invert angle
+                angle = 360 - angle; // invert angle
 
                 return angle;
             } else {

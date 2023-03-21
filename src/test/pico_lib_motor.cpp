@@ -5,8 +5,8 @@
 
 Motor motor1(21, 20, MAX_SPEED); // top left JST, top right motor
 Motor motor2(26, 22, MAX_SPEED); // bottom left JST, bottom right motor
-Motor motor3(3, 7, MAX_SPEED);  // bottom right JST, bottom left motor
-Motor motor4(11, 9, MAX_SPEED); // top right JST, top left motor
+Motor motor3(3, 7, MAX_SPEED);   // bottom right JST, bottom left motor
+Motor motor4(11, 9, MAX_SPEED);  // top right JST, top left motor
 
 // Conflicting PWM pins:
 

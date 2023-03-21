@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include <Wire.h>
 #include <IMU.h>
+#include <Wire.h>
 
 IMU imu(0x1E);
 

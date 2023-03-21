@@ -5,7 +5,8 @@
 
 class Kicker {
     public:
-        Kicker(int pin) : _pin(pin) { // constructor
+        Kicker(int pin) :
+            _pin(pin) { // constructor
             pinMode(_pin, OUTPUT);
         };
         void kick() {

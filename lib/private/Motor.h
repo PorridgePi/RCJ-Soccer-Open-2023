@@ -5,7 +5,8 @@
 
 class Motor {
     public:
-        Motor(int pin0, int pin1, float maxSpeed) : _pin0(pin0), _pin1(pin1), _maxSpeed(maxSpeed) {
+        Motor(int pin0, int pin1, float maxSpeed) :
+            _pin0(pin0), _pin1(pin1), _maxSpeed(maxSpeed) {
             pinMode(_pin0, OUTPUT);
             pinMode(_pin1, OUTPUT);
         }
@@ -24,8 +25,8 @@ class Motor {
     private:
         const int _pin0;
         const int _pin1;
-        float _speed;
-        float _maxSpeed;
+        float     _speed;
+        float     _maxSpeed;
 };
 
 #endif

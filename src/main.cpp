@@ -1,23 +1,23 @@
 #include <Arduino.h>
-#include <Definitions.h>
-#include <Wire.h>
 #include <Camera.h>
-#include <Lidar.h>
-#include <IMU.h>
+#include <Definitions.h>
 #include <Drive.h>
+#include <IMU.h>
+#include <Lidar.h>
+#include <Wire.h>
 #define MAX_SPEED 0.5
 Motor motorFR(21, 20, MAX_SPEED); // top left JST, top right motor
 Motor motorBR(26, 22, MAX_SPEED); // bottom left JST, bottom right motor
-Motor motorBL(3, 7, MAX_SPEED);  // bottom right JST, bottom left motor
-Motor motorFL(11, 9, MAX_SPEED); // top right JST, top left motor
+Motor motorBL(3, 7, MAX_SPEED);   // bottom right JST, bottom left motor
+Motor motorFL(11, 9, MAX_SPEED);  // top right JST, top left motor
 
 Drive driveBase(motorFR, motorBR, motorBL, motorFL);
 
-#define DEBUG true     
-#define DEBUG_PRINT_LIGHT_GATE false
-#define DEBUG_PRINT_PIXY false
-#define DEBUG_LOOP_TIME true
-#define DEBUG_ON_LINE false
+#define DEBUG                   true
+#define DEBUG_PRINT_LIGHT_GATE  false
+#define DEBUG_PRINT_PIXY        false
+#define DEBUG_LOOP_TIME         true
+#define DEBUG_ON_LINE           false
 #define DEBUG_PRINT_ORIENTATION false
 
 #define MAX_BALL_DIST_THRESHOLD 420
@@ -33,7 +33,7 @@ Lidar lidarRight(0x13, +4);
 Lidar lidarBack(0x11, +5);
 Lidar lidarLeft(0x10, +4);
 
-int x,y;
+int x, y;
 
 IMU imu(0x1E);
 
@@ -83,7 +83,7 @@ void ballTrack() {
     }
 
     if (moveAngle < 0) moveAngle += 360;
-    
+
     Serial.print(ballAngle); Serial.print("\t");
     Serial.print(ballDistance); Serial.print("\t");
     Serial.print(ballDistInCm); Serial.print("\t");
@@ -96,8 +96,8 @@ void localisation() {
 
     front = lidarFront.read();
     right = lidarRight.read();
-    back = lidarBack.read();
-    left = lidarLeft.read();
+    back  = lidarBack.read();
+    left  = lidarLeft.read();
 
     // field width = 182cm, field length = 243cm
     x = (left + 182 - right) / 2;
@@ -111,7 +111,6 @@ void localisation() {
     Serial.print(back); Serial.print("\t");
     Serial.print(left); Serial.print("\t");
     Serial.println();
-    
 }
 
 void setup() {
@@ -125,16 +124,15 @@ void setup() {
     Pixy.begin(19200);
 
     // I2C for LiDAR
-    Wire.setSCL(13); //5 for GY273, 13 for Luna
-    Wire.setSDA(12); //4 for GY273, 12 for Luna
+    Wire.setSCL(13); // 5 for GY273, 13 for Luna
+    Wire.setSDA(12); // 4 for GY273, 12 for Luna
     Wire.begin();
 
-    imu.setCalibration(159,32,516,530,-53);
+    imu.setCalibration(159, 32, 516, 530, -53);
 
     imu.init();
-    
-    imu.tare();
 
+    imu.tare();
 
     emptyLightGateThreshold = calibrateLightGate();
     digitalWrite(PIN_LED, LOW); // turn off LED to indicate end of setup
@@ -150,10 +148,10 @@ void loop() {
     */
     currentOrientation = imu.readAngle();
 
-    //ballTrack();
-    //localisation();
+    // ballTrack();
+    // localisation();
 
-    driveBase.setDrive(0,0,constrain(currentOrientation/180,-0.5,0.5));
+    driveBase.setDrive(0, 0, constrain(currentOrientation / 180, -0.5, 0.5));
 
     if (DEBUG_ON_LINE) {
         Serial.print(isOnLine()); Serial.print("\t");
@@ -166,7 +164,7 @@ void loop() {
     if (DEBUG_PRINT_PIXY) {
         Serial.print(ballDistance); Serial.print("\t");
         Serial.print(ballAngle); Serial.print("\t");
-    } 
+    }
     if (DEBUG_LOOP_TIME) {
         Serial.print((float) (micros() - loopStartMicros) / 1000);
         Serial.print("\t");

@@ -1,13 +1,13 @@
 #include <Arduino.h>
+#include <Definitions.h>
 #include <FastLED.h>
 #include <Temt.h>
 #include <Wire.h>
-#include <Definitions.h>
 
-#define TEMT_THRESHOLD    1000 // to be calibrated
-#define DEBUG             false
-#define DEBUG_LOOP_TIME   true
-#define NUM_LEDS 10
+#define TEMT_THRESHOLD  1000 // to be calibrated
+#define DEBUG           false
+#define DEBUG_LOOP_TIME true
+#define NUM_LEDS        10
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -17,8 +17,8 @@
 //    13   15
 
 unsigned long loopStartMicros;
-bool isOnLine;
-CRGB leds[NUM_LEDS];
+bool          isOnLine;
+CRGB          leds[NUM_LEDS];
 
 Temt temts[10] = {
     Temt(33, 0.4, 1),
@@ -47,7 +47,7 @@ void setup() {
 
 void loop() {
     loopStartMicros = micros(); // For debugging loop time
-    isOnLine = false;
+    isOnLine        = false;
 
     // Read the values from the sensors
     for (int i = 0; i < 10; i++) {
@@ -73,5 +73,6 @@ void loop() {
         Serial.print('\t');
     }
 
-    if (DEBUG || DEBUG_LOOP_TIME) Serial.println();
+    if (DEBUG || DEBUG_LOOP_TIME)
+        Serial.println();
 }
