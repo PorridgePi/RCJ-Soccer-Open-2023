@@ -13,6 +13,8 @@
 
 Camera Pixy(PIXY_RX, PIXY_TX, 139, 104);
 
+bool isOnLine;
+
 int ballAngle;
 int ballDistance;
 
@@ -27,7 +29,12 @@ Motor motorFL(11, 9, MAX_SPEED);  // top right JST, top left motor
 
 Drive driveBase(motorFR, motorBR, motorBL, motorFL);
 
-float   frontDist, backDist, rightDist, leftDist;
+#ifdef USE_MULTICORE
+volatile float frontDist, backDist, rightDist, leftDist;
+#else
+float frontDist, backDist, rightDist, leftDist;
+#endif
+
 int x, y;
 Lidar lidarFront(0x12, -5);
 Lidar lidarRight(0x13, +4);
@@ -36,7 +43,13 @@ Lidar lidarLeft(0x10, +4);
 
 float targetSpeed, rotationRate;
 
+#ifdef DEBUG_CORE
+volatile float botHeading;
+#else
 float botHeading;
+#endif
+
+float rotateAngle;
 IMU imu(0x1E);
 
 void blinkLED(int interval = 50) {
@@ -67,30 +80,27 @@ void ballTrack() {
 
     float ballDistInCm = BALL_FUNCTION_THRESHOLD * ballDistance * ballDistance;
 
-    /*
+    float moveAngle = 0;
+
     if (ballAngle >= 0 && ballAngle < 180) {
         moveAngle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
     } else if (ballAngle >= 180 && ballAngle < 360) {
         moveAngle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8)));
     }
     if (moveAngle < 0) moveAngle += 360;
-    
 
-    Serial.print(ballAngle); Serial.print("\t");
-    Serial.print(ballDistance); Serial.print("\t");
+    driveBase.setDrive(ballAngle != -1 ? 0.15 : 0, moveAngle, constrain(rotateAngle/360, -1, 1));
+
     Serial.print(ballDistInCm); Serial.print("\t");
     Serial.print(moveAngle); Serial.print("\t");
-    Serial.println();
-    
-    */
 }
 
-void moveTo(int targetX, int targetY) {
+void moveTo(int targetX, int targetY, int tolerance) {
     float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
     targetAngle = targetAngle < 0 ? targetAngle + 360 : targetAngle;
-    float rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
     float dist = hypot(targetX - x, targetY - y);
-    if (dist > 10) {
+
+    if (dist > tolerance) {
         driveBase.setDrive(0.2, targetAngle, constrain(rotateAngle/360, -1, 1));
     } else {
         driveBase.setDrive(0, 0, 0);
@@ -108,10 +118,11 @@ void updatePosition() {
     y = (frontDist + 243 - backDist)/2;
 }
 
-void setup() {
-    // UART
-    Serial.begin(9600);
-    Pixy.begin(19200);
+void setupDevices() {
+    // I2C for IMU
+    imu.setCalibration(159, 32, 516, 530, -53);
+    imu.init();
+    imu.tare();
 
     // I2C for LiDAR
     Wire.setSCL(13);
@@ -119,34 +130,72 @@ void setup() {
     Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
 
-    // I2C for IMU
-    imu.setCalibration(159, 32, 516, 530, -53);
-    imu.init();
-    imu.tare();
+    // Pin for bottom plate
+    pinMode(BOTTOM_PLATE_PIN, INPUT);
+}
+
+void updateData() {
+    static unsigned long lastMillis = 0;
+    if (millis() - lastMillis >= 1000/250) { // 250 Hz
+        updatePosition();
+        lastMillis = millis();
+    }
+    botHeading = imu.readAngle();
+    rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
+    isOnLine = digitalRead(BOTTOM_PLATE_PIN);
+}
+
+void setup() {
+    // UART
+    Serial.begin(9600);
+    Pixy.begin(19200);
+
+    #ifndef USE_MULTICORE
+    setupDevices();
+    #endif
 
     // LED
     pinMode(PIN_LED, OUTPUT);
 }
 
+void setup1() {
+    #ifdef USE_MULTICORE
+    setupDevices();
+    #endif
+}
+
 void loop() {
     unsigned long long now = micros(); // loop time
 
-    botHeading = imu.readAngle();
-    bool isOnLine = digitalRead(1);
-    float rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
+    #ifndef USE_MULTICORE
+    updateData();
+    #endif
 
-    updateBallData();
-    Serial.print(isOnLine); Serial.print("\t");
-    Serial.print(ballAngle); Serial.print("\t");
-    Serial.println(ballDistance);
+    // ballTrack();
+    // moveTo(91, 122, 2);
+    driveBase.setDrive(ballAngle != -1 ? 0.3 : 0, ballAngle, constrain(rotateAngle/360, -1, 1));
+
+    // Serial.print(isOnLine); Serial.print("\t");
+    // Serial.print(ballAngle); Serial.print("\t");
+    // Serial.print(ballDistance); Serial.print("\t");
+    Serial.print(botHeading); Serial.print("\t");
+    // Serial.print(frontDist); Serial.print("\t");
+    // Serial.print(backDist); Serial.print("\t");
+    // Serial.print(leftDist); Serial.print("\t");
+    // Serial.print(rightDist); Serial.print("\t");
+    Serial.print(x); Serial.print("\t");
+    Serial.print(y); Serial.print("\t");
 
     // Loop time
-    // Serial.print((float)(micros()-now)/1000);
-    // Serial.println();
+    Serial.print((float)(micros()-now)/1000); Serial.print("\t");
+    Serial.println();
 
     blinkLED();
 }   
 
 void loop1() {
     Pixy.readData();
+    #ifdef USE_MULTICORE
+    updateData();
+    #endif
 }
