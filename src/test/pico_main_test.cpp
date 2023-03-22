@@ -131,6 +131,7 @@ void setup() {
     imu.setCalibration(159, 32, 516, 530, -53);
     imu.init();
     imu.tare();
+    pinMode(PIN_LED, OUTPUT);
 }
 
 void loop() {
@@ -163,3 +164,10 @@ void loop() {
     // Serial.print((float)(micros()-now)/1000);
     // Serial.println();
 }   
+
+void loop1() {
+    digitalWrite(PIN_LED, HIGH);
+    delay(25);
+    digitalWrite(PIN_LED, LOW);
+    delay(25);
+}
