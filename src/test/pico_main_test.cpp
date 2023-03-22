@@ -11,7 +11,7 @@
 // #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
 #define BALL_FUNCTION_THRESHOLD 0.0004f
 
-// Camera Pixy(PIXY_RX, PIXY_TX, 139, 104);
+Camera Pixy(PIXY_RX, PIXY_TX, 139, 104);
 
 int ballAngle;
 int ballDistance;
@@ -38,14 +38,13 @@ float targetSpeed, rotationRate;
 
 float botHeading;
 IMU imu(0x1E);
-/*
+
 void updateBallData() {
-    Pixy.readData();
-    //Pixy.isNewDataPresent(); // checks if new data is present and parses it
+    Pixy.isNewDataPresent(); // checks if new data is present and parses it
     ballAngle = Pixy.getBallAngle();
     ballDistance = Pixy.getBallDistance();
 }
-*/
+
 void ballTrack() {
     // Move perpendicular to ball if near, move straight if far
 
@@ -121,12 +120,12 @@ void updatePosition() {
 
 void setup() {
     Serial.begin(9600);
-    //Pixy.begin(19200);
+    Pixy.begin(19200);
+
     Wire.setSCL(13);
     Wire.setSDA(12);
     Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
-    
 
     imu.setCalibration(159, 32, 516, 530, -53);
     imu.init();
@@ -143,10 +142,10 @@ void loop() {
     // bool isOnLine = digitalRead(1);
     float rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
 
-    // updateBallData();
-    // Serial.print(ballAngle);
-    // Serial.print("\t");
-    // Serial.println(ballDistance);
+    updateBallData();
+    Serial.print(ballAngle);
+    Serial.print("\t");
+    Serial.println(ballDistance);
     
     // // Serial.print(rotateAngle);
     // Serial.print("\t");
@@ -178,5 +177,5 @@ void loop() {
 }   
 
 void loop1() {
-
+    Pixy.readData();
 }
