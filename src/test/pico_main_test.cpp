@@ -136,6 +136,8 @@ void setup() {
 
 void loop() {
     unsigned long long now = micros();
+    static unsigned long lastMicros = 0;
+    static bool ledState = false;
 
     botHeading = imu.readAngle();
     // bool isOnLine = digitalRead(1);
@@ -163,11 +165,18 @@ void loop() {
 
     // Serial.print((float)(micros()-now)/1000);
     // Serial.println();
+    if (micros() - lastMicros >= 50 * 1000) {
+        lastMicros = micros();
+        if (ledState) {
+            digitalWrite(PIN_LED, LOW);
+            ledState = false;
+        } else {
+            digitalWrite(PIN_LED, HIGH);
+            ledState = true;
+        }
+    }
 }   
 
 void loop1() {
-    digitalWrite(PIN_LED, HIGH);
-    delay(25);
-    digitalWrite(PIN_LED, LOW);
-    delay(25);
+
 }
