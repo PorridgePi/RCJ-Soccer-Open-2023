@@ -140,8 +140,12 @@ void setup() {
 
 void loop() {
     loopStartMicros = micros();
+    
     /*
-    if (!USE_MULTICORE) Pixy.readData();
+    #ifndef USE_MULTICORE
+    Pixy.readData();
+    #endif
+
     Pixy.isNewDataPresent(); // checks if new data is present and parses it
     ballAngle = Pixy.getBallAngle();
     ballDistance = Pixy.getBallDistance();
@@ -176,5 +180,7 @@ void loop() {
 }
 
 void loop1() {
-    if (USE_MULTICORE) Pixy.readData();
+    #ifdef USE_MULTICORE
+    Pixy.readData();
+    #endif
 }
