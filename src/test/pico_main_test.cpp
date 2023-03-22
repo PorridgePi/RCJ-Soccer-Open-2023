@@ -129,23 +129,18 @@ void setup() {
 }
 
 void loop() {
-    unsigned long long now = micros();
+    unsigned long long now = micros(); // loop time
 
     botHeading = imu.readAngle();
-    // bool isOnLine = digitalRead(1);
+    bool isOnLine = digitalRead(1);
     float rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
 
     updateBallData();
-    Serial.print(ballAngle);
-    Serial.print("\t");
+    Serial.print(isOnLine); Serial.print("\t");
+    Serial.print(ballAngle); Serial.print("\t");
     Serial.println(ballDistance);
-    
-    // Serial.print(rotateAngle);
-    // Serial.print("\t");
 
-    // updatePosition();
-    // moveTo(91, 122);
-
+    // Loop time
     // Serial.print((float)(micros()-now)/1000);
     // Serial.println();
 
