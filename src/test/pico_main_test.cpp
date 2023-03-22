@@ -119,16 +119,16 @@ void updatePosition() {
 }
 
 void setupDevices() {
-    // I2C for IMU
-    imu.setCalibration(159, 32, 516, 530, -53);
-    imu.init();
-    imu.tare();
-
     // I2C for LiDAR
     Wire.setSCL(13);
     Wire.setSDA(12);
     Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
+
+    // I2C for IMU
+    imu.setCalibration(159, 32, 516, 530, -53);
+    imu.init();
+    imu.tare();
 
     // Pin for bottom plate
     pinMode(BOTTOM_PLATE_PIN, INPUT);
@@ -173,6 +173,7 @@ void loop() {
 
     // ballTrack();
     // moveTo(91, 122, 2);
+    // updateBallData();
     driveBase.setDrive(ballAngle != -1 ? 0.3 : 0, ballAngle, constrain(rotateAngle/360, -1, 1));
 
     // Serial.print(isOnLine); Serial.print("\t");
