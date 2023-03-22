@@ -143,10 +143,6 @@ void loop() {
     // Serial.print(rotateAngle);
     // Serial.print("\t");
 
-    // For Yikun's Drive lib
-    // driveBase.setDrive(0.5, floor((millis()%4000)/1000)*90 + rotateAngle, constrain(-rotateAngle/45, -1, 1));
-    // driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90-rotateAngle, constrain(pid.compute(0, -rotateAngle/180), -1, 1));
-    
     // WITHOUT PID
     // driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(rotateAngle/360, -1, 1));
     // WITH PID
