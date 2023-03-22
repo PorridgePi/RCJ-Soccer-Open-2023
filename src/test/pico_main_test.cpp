@@ -93,29 +93,9 @@ void updatePosition() {
     backDist = lidarBack.read() * cosf(RAD(angle));
     leftDist = lidarLeft.read() * cosf(RAD(angle));
     rightDist = lidarRight.read() * cosf(RAD(angle));
-    
-    Serial.print("Front: ");
-    Serial.print(frontDist); Serial.print("\t");
-
-    Serial.print("Back: ");
-    Serial.print(backDist); Serial.print("\t");
-    
-    Serial.print("Left: ");
-    Serial.print(leftDist); Serial.print("\t");
-
-    Serial.print("Right: ");
-    Serial.print(rightDist); Serial.print("\t");
-
-    Serial.print("Angle: ");
-    Serial.print(angle); Serial.print("\t");
 
     x = (leftDist + 182 - rightDist)/2;
     y = (frontDist + 243 - backDist)/2;
-
-    Serial.print(x);
-    Serial.print("\t");
-    Serial.print(y);
-    Serial.print("\t");
 }
 
 void setup() {
