@@ -5,6 +5,12 @@
 #include <Definitions.h>
 #include <Motor.h>
 
+// USAGE
+// WITHOUT PID:
+// driveBase.setDrive(0.2, floor((millis() % 4000) / 1000) * 90 - rotateAngle, constrain(rotateAngle / 360, -1, 1));
+// WITH PID:
+// driveBase.setDrive(0.2, floor((millis() % 4000) / 1000) * 90 - rotateAngle, constrain(pid.compute(0, -rotateAngle / 180), -1, 1));
+
 class Drive {
     public:
         Drive(Motor &motorFR, Motor &motorBR, Motor &motorBL, Motor &motorFL) :
