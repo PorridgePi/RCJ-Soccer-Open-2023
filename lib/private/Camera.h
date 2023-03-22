@@ -29,7 +29,7 @@ class Camera : public SoftwareSerial {
             static bool recvInProgress = false;
 
             static uint8_t writeBuffer[6] = {174, 193, 32, 2, 255, 255};
-            SoftwareSerial::write(writeBuffer, 6);
+            if (SoftwareSerial::available() == 0) SoftwareSerial::write(writeBuffer, 6);
 
             while (SoftwareSerial::available() > 0 && _newData == false) {
                 prevByte    = currentByte;
@@ -38,8 +38,8 @@ class Camera : public SoftwareSerial {
                 if (recvInProgress == true) {
                     if (i == 3) {
                         if (currentByte % 14 == 0) {
-                            maxLength += currentByte + 2; // account for 2 bytes of checksum
-                            constrain(maxLength, 0, BUFFER_LENGTH - 1);
+                            // CONSTRAIN!
+                            maxLength = constrain(maxLength + currentByte + 2, 0, BUFFER_LENGTH - 1); // account for 2 bytes of checksum
                         }
                     }
                     if (i < maxLength) {
@@ -69,11 +69,11 @@ class Camera : public SoftwareSerial {
             // bytes 14-15 = height
 
             if (_buffer[2] == 33 && _buffer[6] > 0) {
-                _signature         = _buffer[6] + _buffer[7] * 256;
-                _x                 = _buffer[8] + _buffer[9] * 256;
-                _y                 = _buffer[10] + _buffer[11] * 256;
-                _width             = _buffer[12] + _buffer[13] * 256;
-                _height            = _buffer[14] + _buffer[15] * 256;
+                _signature         = constrain(_buffer[6] + _buffer[7] * 256, 0, 255);
+                _x                 = constrain(_buffer[8] + _buffer[9] * 256, 0, 315);
+                _y                 = constrain(_buffer[10] + _buffer[11] * 256, 0, 207);
+                _width             = constrain(_buffer[12] + _buffer[13] * 256, 0, 316);
+                _height            = constrain(_buffer[14] + _buffer[15] * 256, 0, 208);
                 _blockLastDetected = 0;
             } else {
                 if (_blockLastDetected > 10) { // if no block detected for 10 loops, set values to -1
@@ -93,8 +93,7 @@ class Camera : public SoftwareSerial {
                 int yDiff = _y - _yC;
 
                 // max distance = 5 * 84 = 420 since max change is around 84 pixels
-                int distance = 5 * hypot(xDiff, yDiff);
-                return distance;
+                return constrain(5 * hypot(xDiff, yDiff), 0, 3000);
             } else {
                 return -1;
             }
