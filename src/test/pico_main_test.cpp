@@ -86,17 +86,12 @@ void ballTrack() {
 }
 
 void moveTo(int targetX, int targetY) {
-    float moveAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
-    moveAngle = moveAngle < 0 ? moveAngle + 360 : moveAngle;
-    float dist = hypot(targetX - x, targetY - y);
-
-    Serial.print("Move Angle: ");
-    Serial.print(moveAngle);
-    Serial.print("\t");
-
+    float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
+    targetAngle = targetAngle < 0 ? targetAngle + 360 : targetAngle;
     float rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
+    float dist = hypot(targetX - x, targetY - y);
     if (dist > 10) {
-        driveBase.setDrive(0.2, moveAngle, constrain(rotateAngle/360, -1, 1));
+        driveBase.setDrive(0.2, targetAngle, constrain(rotateAngle/360, -1, 1));
     } else {
         driveBase.setDrive(0, 0, 0);
     }
@@ -114,17 +109,22 @@ void updatePosition() {
 }
 
 void setup() {
+    // UART
     Serial.begin(9600);
     Pixy.begin(19200);
 
+    // I2C for LiDAR
     Wire.setSCL(13);
     Wire.setSDA(12);
     Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
 
+    // I2C for IMU
     imu.setCalibration(159, 32, 516, 530, -53);
     imu.init();
     imu.tare();
+
+    // LED
     pinMode(PIN_LED, OUTPUT);
 }
 
@@ -140,7 +140,7 @@ void loop() {
     Serial.print("\t");
     Serial.println(ballDistance);
     
-    // // Serial.print(rotateAngle);
+    // Serial.print(rotateAngle);
     // Serial.print("\t");
 
     // For Yikun's Drive lib
@@ -152,8 +152,8 @@ void loop() {
     // WITH PID
     // driveBase.setDrive(0.2, floor((millis()%4000)/1000)*90 - rotateAngle, constrain(pid.compute(0, -rotateAngle / 180), -1, 1));
 
-    //updatePosition();
-    //moveTo(91, 122);
+    // updatePosition();
+    // moveTo(91, 122);
 
     // Serial.print((float)(micros()-now)/1000);
     // Serial.println();
