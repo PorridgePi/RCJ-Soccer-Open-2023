@@ -173,25 +173,25 @@ void loop() {
 
     // ballTrack();
     // moveTo(91, 122, 2);
-    // updateBallData();
+    updateBallData();
     driveBase.setDrive(ballAngle != -1 ? 0.3 : 0, ballAngle, constrain(rotateAngle/360, -1, 1));
 
     // Serial.print(isOnLine); Serial.print("\t");
-    // Serial.print(ballAngle); Serial.print("\t");
-    // Serial.print(ballDistance); Serial.print("\t");
-    Serial.print(botHeading); Serial.print("\t");
+    Serial.print(ballAngle); Serial.print("\t");
+    Serial.print(ballDistance); Serial.print("\t");
+    // Serial.print(botHeading); Serial.print("\t");
     // Serial.print(frontDist); Serial.print("\t");
     // Serial.print(backDist); Serial.print("\t");
     // Serial.print(leftDist); Serial.print("\t");
     // Serial.print(rightDist); Serial.print("\t");
-    Serial.print(x); Serial.print("\t");
-    Serial.print(y); Serial.print("\t");
+    // Serial.print(x); Serial.print("\t");
+    // Serial.print(y); Serial.print("\t");
 
     // Loop time
     Serial.print((float)(micros()-now)/1000); Serial.print("\t");
     Serial.println();
 
-    blinkLED();
+    // blinkLED();
 }   
 
 void loop1() {
