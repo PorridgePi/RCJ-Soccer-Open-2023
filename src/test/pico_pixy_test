@@ -1,5 +1,0 @@
-#include <Definitions.h>
-#include <Camera2.h>
-#include <Arduino.h>
-
-Camera
