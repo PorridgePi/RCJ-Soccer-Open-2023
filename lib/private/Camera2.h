@@ -9,15 +9,11 @@
 
 // Reading speed dependent on loop time
 
-struct Block {
-    int  signature, x, y, width, height;
-};
-
 class Camera : public SoftwareSerial {
     public:
         Camera(pin_size_t rx, pin_size_t tx, int xC, int yC) :
             SoftwareSerial(rx, tx), _xC(xC), _yC(yC) {
-            SoftwareSerial::setTimeout(1);
+            //SoftwareSerial::setTimeout(1);
             //_maxLength = 4;
         }
 
@@ -35,13 +31,15 @@ class Camera : public SoftwareSerial {
         }
 
         void step() {//Run this every loop cycle; reads 1 byte from the data stream;
+        
+            Serial.println("HI");
             static uint8_t writeBuffer[6] = {174, 193, 32, 2, 255, 255};
             static int bytesToRead = SoftwareSerial::available();
             if (bytesToRead == 0) SoftwareSerial::write(writeBuffer, 6);
             _timeAtLastStep = millis();
-                Serial.print(bytesToRead);
-                Serial.print("\t");
-            SoftwareSerial::readBytes(_header, 6) ;
+            Serial.print(bytesToRead);
+            Serial.print("\t");
+            //SoftwareSerial::readBytes(_header, 6) ;
             for (size_t i; i < 6; i++) {
                 Serial.print(_header[i]);
                 Serial.print("\t");
@@ -51,7 +49,7 @@ class Camera : public SoftwareSerial {
                 //memset(_header, 0, sizeof(_header));
 
                 //Serial.println("Clearing buffer");
-                while (SoftwareSerial::available()) {SoftwareSerial::read();} // How slow is this?
+                //while (SoftwareSerial::available()) {SoftwareSerial::read();} // How slow is this?
                 return;
             } else { //IF THE HEADER IS CORRECT:
                 _numBlocks = (int)_header[3] / 14;
