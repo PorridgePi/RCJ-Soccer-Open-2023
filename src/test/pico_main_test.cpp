@@ -6,15 +6,15 @@
 #include <Wire.h>
 
 //// ** CONFIG ** ////
-#define USE_MULTICORE // if defined, use second core for data update (NOTE: Overwritten by USE_OFFICIAL_PIXY_LIB)
+#define USE_MULTICORE         // if defined, use second core for data update (NOTE: Overwritten by USE_OFFICIAL_PIXY_LIB)
 #define USE_OFFICIAL_PIXY_LIB // if defined, use official Pixy2 library (NOTE: Overwrites USE_MULTICORE)
 
 #define pixyXC 139 // x-coordinate of center of Pixy2 camera
 #define pixyYC 104 // y-coordinate of center of Pixy2 camera
 
-#define SIGNATURE_BALL 1 // signature of ball
+#define SIGNATURE_BALL        1 // signature of ball
 #define SIGNATURE_YELLOW_GOAL 2 // signature of yellow goal
-#define SIGNATURE_BLUE_GOAL 3 // signature of blue goal
+#define SIGNATURE_BLUE_GOAL   3 // signature of blue goal
 
 #define MAX_BALL_DIST_THRESHOLD 380 // max distance to ball before out of range
 #define MIN_BALL_DIST_THRESHOLD 160 // min distance to ball
@@ -22,26 +22,26 @@
 #define BALL_FUNCTION_THRESHOLD 0.0004f // constant for distance to cm conversion
 
 #define MAX_SPEED 0.5 // max speed of robot (0.0 to 1.0), failsafe and constrains motor drivers directly
-#define SPEED 0.3 // speed of robot (0.0 to 1.0)
+#define SPEED     0.3 // speed of robot (0.0 to 1.0)
 
 //// ** DECLARATIONS ** ////
 // Pixy2 Camera
 #ifdef USE_OFFICIAL_PIXY_LIB
 #include <Pixy2UART.h> // include official Pixy2 library
-Pixy2UART pixy; // Pixy object from official Pixy2 library
+Pixy2UART pixy;        // Pixy object from official Pixy2 library
 
-volatile int numBlocks; // total number of blocks deteced by Pixy2, volatile for multicore access
-Block blocks[50]; // array of all blocks detected by Pixy2
-Block ballBlocks[10]; // array of ball blocks
-Block yellowBlocks[10]; // array of yellow goal blocks
-Block blueBlocks[10]; // array of blue goal blocks
+volatile int numBlocks;        // total number of blocks deteced by Pixy2, volatile for multicore access
+Block        blocks[50];       // array of all blocks detected by Pixy2
+Block        ballBlocks[10];   // array of ball blocks
+Block        yellowBlocks[10]; // array of yellow goal blocks
+Block        blueBlocks[10];   // array of blue goal blocks
 #else
 #include <Camera.h> // include personal Pixy2 library
 Camera Pixy(PIXY_RX, PIXY_TX, pixyXC, pixyYC); // Camera object from personal Pixy2 library
 #endif
 
 // Ball
-int ballAngle; // angle of ball relative to robot (0 to 360 degrees)
+int ballAngle;    // angle of ball relative to robot (0 to 360 degrees)
 int ballDistance; // distance to ball (arbitrary units due to non-linear relationship caused by mirror distortion)
 
 // Bottom Plate
@@ -51,17 +51,17 @@ bool isOnLine; // true (1) if robot is on line (i.e. any bottom plate TEMT6000 e
 PID pid(0.5, 0, 30, 1000);
 
 // Movement
-Motor motorFR(21, 20, MAX_SPEED); // top left JST, top right motor
-Motor motorBR(26, 22, MAX_SPEED); // bottom left JST, bottom right motor
-Motor motorBL(3, 7, MAX_SPEED);   // bottom right JST, bottom left motor
-Motor motorFL(11, 9, MAX_SPEED);  // top right JST, top left motor
+Motor motorFR(21, 20, MAX_SPEED);                    // top left JST, top right motor
+Motor motorBR(26, 22, MAX_SPEED);                    // bottom left JST, bottom right motor
+Motor motorBL(3, 7, MAX_SPEED);                      // bottom right JST, bottom left motor
+Motor motorFL(11, 9, MAX_SPEED);                     // top right JST, top left motor
 Drive driveBase(motorFR, motorBR, motorBL, motorFL); // drive base controlling all 4 motors
 
 // LiDAR
 Lidar lidarFront(0x12, -5); // front LiDAR
 Lidar lidarRight(0x13, +4); // right LiDAR
-Lidar lidarBack(0x11, +5); // back LiDAR
-Lidar lidarLeft(0x10, +4); // left LiDAR
+Lidar lidarBack(0x11, +5);  // back LiDAR
+Lidar lidarLeft(0x10, +4);  // left LiDAR
 #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
 volatile float frontDist, backDist, rightDist, leftDist; // volatile for multicore access
 #else
@@ -80,9 +80,9 @@ float rotateAngle; // for compass correction (-180 to 180 degrees)
 
 //// ** FUNCTIONS ** ////
 // continuous async blink LED to indicate program is running and Pico has not hang
-void blinkLED(int interval = 50) { 
-    static unsigned long lastMillis = 0; // last time LED was toggled
-    static bool ledState = false; // true = LED on, false = LED off
+void blinkLED(int interval = 50) {
+    static unsigned long lastMillis = 0;     // last time LED was toggled
+    static bool          ledState   = false; // true = LED on, false = LED off
     if (millis() - lastMillis >= interval) {
         lastMillis = millis();
         if (ledState) {
@@ -147,13 +147,13 @@ void categoriseBlock() {
     // Update ball angle and distance
     static unsigned long ballLastMillis = millis(); // last time ball was detected
     if (numBall > 0) {
-        ballAngle = getBallAngle();
+        ballAngle    = getBallAngle();
         ballDistance = getBallDistance();
     } else { // no ball detected
         // if no ball detected for 1 second, reset ball angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
         if (millis() - ballLastMillis > 1000) {
-            ballAngle = -1;
+            ballAngle    = -1;
             ballDistance = -1;
         }
     }
@@ -179,7 +179,7 @@ void categoriseBlock() {
 #else
 void updateBallData() {
     Pixy.isNewDataPresent(); // checks if new data is present and parses it
-    ballAngle = Pixy.getBallAngle();
+    ballAngle    = Pixy.getBallAngle();
     ballDistance = Pixy.getBallDistance();
 }
 #endif
@@ -203,7 +203,8 @@ int ballTrack() {
     if (moveAngle < 0) moveAngle += 360;
 
     // Serial.print(ballDistInCm); Serial.print("\t");
-    Serial.print("moveAng: "); Serial.print(moveAngle); Serial.print("\t");
+    Serial.print("moveAng: ");
+    Serial.print(moveAngle); Serial.print("\t");
 
     return moveAngle;
 }
@@ -211,8 +212,8 @@ int ballTrack() {
 // move to coordinates (x, y) with tolerance in cm
 int moveTo(int targetX, int targetY, int tolerance) {
     float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
-    targetAngle = targetAngle < 0 ? targetAngle + 360 : targetAngle;
-    float dist = hypot(targetX - x, targetY - y); // distance to target coordinates
+    targetAngle       = targetAngle < 0 ? targetAngle + 360 : targetAngle;
+    float dist        = hypot(targetX - x, targetY - y); // distance to target coordinates
 
     if (dist > tolerance) { // not reached target, move
         return targetAngle;
@@ -224,13 +225,13 @@ int moveTo(int targetX, int targetY, int tolerance) {
 // update robot coordinates using LiDAR
 void updatePosition() {
     float angle = botHeading <= 180 ? botHeading : 360 - botHeading; // correct for robot rotation (0 to 180 degrees)
-    frontDist = lidarFront.read() * cosf(RAD(angle));
-    backDist = lidarBack.read() * cosf(RAD(angle));
-    leftDist = lidarLeft.read() * cosf(RAD(angle));
-    rightDist = lidarRight.read() * cosf(RAD(angle));
+    frontDist   = lidarFront.read() * cosf(RAD(angle));
+    backDist    = lidarBack.read() * cosf(RAD(angle));
+    leftDist    = lidarLeft.read() * cosf(RAD(angle));
+    rightDist   = lidarRight.read() * cosf(RAD(angle));
 
-    x = (leftDist + 182 - rightDist)/2;
-    y = (frontDist + 243 - backDist)/2;
+    x = (leftDist + 182 - rightDist) / 2;
+    y = (frontDist + 243 - backDist) / 2;
 }
 
 // setup devices (LiDARs, IMU, bottom plate) - called in either core 0 or 1
@@ -253,14 +254,14 @@ void setupDevices() {
 // update data (LiDARs, IMU, bottom plate) - called in either core 0 or 1
 void updateData() {
     // Update LiDARs not as frequently, using millis() to prevent lag
-    static unsigned long lastMillis = 0; // last time LiDARs were updated
-    if (millis() - lastMillis >= 1000/250) { // 250 Hz
+    static unsigned long lastMillis = 0;       // last time LiDARs were updated
+    if (millis() - lastMillis >= 1000 / 250) { // 250 Hz
         updatePosition();
         lastMillis = millis();
     }
-    botHeading = imu.readAngle(); // from 0 to 360
+    botHeading  = imu.readAngle();                                   // from 0 to 360
     rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
-    isOnLine = digitalRead(BOTTOM_PLATE_PIN); // 1 if on line, 0 if not on line
+    isOnLine    = digitalRead(BOTTOM_PLATE_PIN);                     // 1 if on line, 0 if not on line
 }
 
 //// ** MAIN ** ////
@@ -269,13 +270,13 @@ void setup() {
     // UART
     Serial.begin(9600);
 
-    #ifndef USE_OFFICIAL_PIXY_LIB
+#ifndef USE_OFFICIAL_PIXY_LIB
     Pixy.begin(19200);
-    #endif
+#endif
 
-    #if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
+#if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
     setupDevices();
-    #endif
+#endif
 
     // LED
     pinMode(PIN_LED, OUTPUT);
@@ -308,7 +309,7 @@ void loop() {
 
     //// ** STRATEGY ** ////
     int moveAngle = ballTrack(); // -1 if no ball detected
-    // int moveAngle = ballAngle; // direct movement straight to ball 
+    // int moveAngle = ballAngle; // direct movement straight to ball
     // int moveAngle = moveTo(91, 122, 2); // -1 if reached target
 
     // Staying within bounds
@@ -318,9 +319,9 @@ void loop() {
 
     //// ** MOVEMENT ** ////
     if (moveAngle == -1) { // stop if moveAngle is -1
-        driveBase.setDrive(0, 0, constrain(rotateAngle/360, -1, 1));
+        driveBase.setDrive(0, 0, constrain(rotateAngle / 360, -1, 1));
     } else {
-        driveBase.setDrive(SPEED, moveAngle, constrain(rotateAngle/360, -1, 1));
+        driveBase.setDrive(SPEED, moveAngle, constrain(rotateAngle / 360, -1, 1));
     }
 
     //// ** DEBUG ** ////
@@ -340,14 +341,14 @@ void loop() {
     Serial.println();
 
     // blinkLED();
-}   
+}
 
 // core 1 loop
 void loop1() {
     #ifdef USE_OFFICIAL_PIXY_LIB
     pixy.ccc.getBlocks(); // get blocks from Pixy
 
-    numBlocks = pixy.ccc.numBlocks; // number of blocks detected
+    numBlocks = pixy.ccc.numBlocks;    // number of blocks detected
     memset(blocks, 0, sizeof(blocks)); // clear blocks array
     for (int i = 0; i < numBlocks; i++) {
         // copy blocks to array so that they can be accessed in main loop
