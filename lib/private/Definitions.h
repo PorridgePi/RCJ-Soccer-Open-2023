@@ -1,8 +1,6 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
-#define USE_MULTICORE // to use second core for data update
-
 // Angle Conversions
 #define RAD(x) ((x) / 180.0f * (float) PI)
 #define DEG(x) ((x) * 180.0f / (float) PI)

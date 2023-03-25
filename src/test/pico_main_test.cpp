@@ -5,6 +5,7 @@
 #include <PID.h>
 #include <Wire.h>
 
+#define USE_MULTICORE // if defined, use second core for data update (NOTE: Overwritten by USE_OFFICIAL_PIXY_LIB)
 #define USE_OFFICIAL_PIXY_LIB
 
 #define pixyXC 139
@@ -39,7 +40,7 @@ Motor motorFL(11, 9, MAX_SPEED);  // top right JST, top left motor
 
 Drive driveBase(motorFR, motorBR, motorBL, motorFL);
 
-#ifdef USE_MULTICORE
+#if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
 volatile float frontDist, backDist, rightDist, leftDist;
 #else
 float frontDist, backDist, rightDist, leftDist;
@@ -248,7 +249,7 @@ void setup() {
     Pixy.begin(19200);
     #endif
 
-    #ifndef USE_MULTICORE
+    #if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
     setupDevices();
     #endif
 
@@ -257,7 +258,7 @@ void setup() {
 }
 
 void setup1() {
-    #ifdef USE_MULTICORE
+    #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
     setupDevices();
     #endif
     #ifdef USE_OFFICIAL_PIXY_LIB
@@ -268,7 +269,7 @@ void setup1() {
 void loop() {
     unsigned long long now = micros(); // loop time
 
-    #ifndef USE_MULTICORE
+    #if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
     updateData();
     #endif
 
@@ -331,7 +332,7 @@ void loop1() {
     Pixy.readData();
     #endif
 
-    #ifdef USE_MULTICORE
+    #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
     updateData();
     #endif
 }
