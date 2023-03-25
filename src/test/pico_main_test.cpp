@@ -157,24 +157,6 @@ void categoriseBlock() {
             ballDistance = -1;
         }
     }
-
-    // for (int i = 0; i < numBlocks; i++) {
-    //     Block block = blocks[i];
-    //     Serial.print(" block ");
-    //     Serial.print(i);
-    //     Serial.print(": ");
-
-    //     Serial.print("sig: ");
-    //     Serial.print(block.m_signature);
-    //     Serial.print(" x: ");
-    //     Serial.print(block.m_x);
-    //     Serial.print(" y: ");
-    //     Serial.print(block.m_y);
-    //     Serial.print(" width: ");
-    //     Serial.print(block.m_width);
-    //     Serial.print(" height: ");
-    //     Serial.print(block.m_height);
-    // }
 }
 #else
 void updateBallData() {
