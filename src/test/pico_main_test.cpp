@@ -16,57 +16,69 @@
 #define SIGNATURE_YELLOW_GOAL 2 // signature of yellow goal
 #define SIGNATURE_BLUE_GOAL 3 // signature of blue goal
 
-#ifndef USE_OFFICIAL_PIXY_LIB
-#include <Camera.h> // include personal Pixy2 library
-Camera Pixy(PIXY_RX, PIXY_TX, pixyXC, pixyYC); // Camera object from personal Pixy2 library
-#else
-#include <Pixy2UART.h> // include official Pixy2 library
-Pixy2UART pixy; // Pixy object from official Pixy2 library
-#endif
-
 #define MAX_BALL_DIST_THRESHOLD 380 // max distance to ball before out of range
 #define MIN_BALL_DIST_THRESHOLD 160 // min distance to ball
 // #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
 #define BALL_FUNCTION_THRESHOLD 0.0004f // constant for distance to cm conversion
 
-bool isOnLine; // true (1) if robot is on line (i.e. any bottom plate TEMT6000 exceeds threshold), false (0) if not
-
-int ballAngle; // angle of ball relative to robot (0 to 360 degrees)
-int ballDistance; // distance to ball (arbitrary units due to non-linear relationship caused by mirror distortion)
-
 #define MAX_SPEED 0.5 // max speed of robot (0.0 to 1.0), failsafe and constrains motor drivers directly
 #define SPEED 0.3 // speed of robot (0.0 to 1.0)
 
+//// ** DECLARATIONS ** ////
+// Pixy2 Camera
+#ifdef USE_OFFICIAL_PIXY_LIB
+#include <Pixy2UART.h> // include official Pixy2 library
+Pixy2UART pixy; // Pixy object from official Pixy2 library
+
+volatile int numBlocks; // total number of blocks deteced by Pixy2, volatile for multicore access
+Block blocks[50]; // array of all blocks detected by Pixy2
+Block ballBlocks[10]; // array of ball blocks
+Block yellowBlocks[10]; // array of yellow goal blocks
+Block blueBlocks[10]; // array of blue goal blocks
+#else
+#include <Camera.h> // include personal Pixy2 library
+Camera Pixy(PIXY_RX, PIXY_TX, pixyXC, pixyYC); // Camera object from personal Pixy2 library
+#endif
+
+// Ball
+int ballAngle; // angle of ball relative to robot (0 to 360 degrees)
+int ballDistance; // distance to ball (arbitrary units due to non-linear relationship caused by mirror distortion)
+
+// Bottom Plate
+bool isOnLine; // true (1) if robot is on line (i.e. any bottom plate TEMT6000 exceeds threshold), false (0) if not
+
+// PID
 PID pid(0.5, 0, 30, 1000);
 
+// Movement
 Motor motorFR(21, 20, MAX_SPEED); // top left JST, top right motor
 Motor motorBR(26, 22, MAX_SPEED); // bottom left JST, bottom right motor
 Motor motorBL(3, 7, MAX_SPEED);   // bottom right JST, bottom left motor
 Motor motorFL(11, 9, MAX_SPEED);  // top right JST, top left motor
-
 Drive driveBase(motorFR, motorBR, motorBL, motorFL); // drive base controlling all 4 motors
 
+// LiDAR
+Lidar lidarFront(0x12, -5); // front LiDAR
+Lidar lidarRight(0x13, +4); // right LiDAR
+Lidar lidarBack(0x11, +5); // back LiDAR
+Lidar lidarLeft(0x10, +4); // left LiDAR
 #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
 volatile float frontDist, backDist, rightDist, leftDist; // volatile for multicore access
 #else
 float frontDist, backDist, rightDist, leftDist; // distance to obstacles
 #endif
-
 int x, y; // coordinate of robot relative to field
-Lidar lidarFront(0x12, -5); // front LiDAR
-Lidar lidarRight(0x13, +4); // right LiDAR
-Lidar lidarBack(0x11, +5); // back LiDAR
-Lidar lidarLeft(0x10, +4); // left LiDAR
 
+// IMU
+IMU imu(0x1E); // IMU providing heading
 #ifdef USE_MULTICORE
 volatile float botHeading; //  heading of robot (0 to 360 degrees), volatile for multicore access
 #else
 float botHeading; // heading of robot (0 to 360 degrees)
 #endif
-
 float rotateAngle; // for compass correction (-180 to 180 degrees)
-IMU imu(0x1E); // IMU providing heading
 
+//// ** FUNCTIONS ** ////
 // continuous async blink LED to indicate program is running and Pico has not hang
 void blinkLED(int interval = 50) { 
     static unsigned long lastMillis = 0; // last time LED was toggled
@@ -84,13 +96,6 @@ void blinkLED(int interval = 50) {
 }
 
 #ifdef USE_OFFICIAL_PIXY_LIB
-volatile int numBlocks; // total number of blocks deteced by Pixy2, volatile for multicore access
-Block blocks[50]; // array of all blocks detected by Pixy2
-
-Block ballBlocks[10]; // array of ball blocks
-Block yellowBlocks[10]; // array of yellow goal blocks
-Block blueBlocks[10]; // array of blue goal blocks
-
 // gets distance to ball (arbitrary units), returns -1 if no ball detected
 int getBallDistance() {
     Block ballBlock = ballBlocks[0]; // get first ball block ONLY (Potential improvement?)
@@ -258,6 +263,7 @@ void updateData() {
     isOnLine = digitalRead(BOTTOM_PLATE_PIN); // 1 if on line, 0 if not on line
 }
 
+//// ** MAIN ** ////
 // core 0 setup
 void setup() {
     // UART
