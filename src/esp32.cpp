@@ -64,6 +64,10 @@ void loop() {
 
     if (isOnLine == true) {
         digitalWrite(22, HIGH); // write SCL HIGH
+        if (DEBUG) {
+            Serial.print("LINE");
+            Serial.print('\t');
+        }
     } else {
         digitalWrite(22, LOW); // write SCL HIGH
     }
