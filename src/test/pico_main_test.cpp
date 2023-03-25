@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <CommonUtils.h>
+#include <Definitions.h>
 #include <Drive.h>
 #include <IMU.h>
 #include <Lidar.h>
@@ -118,10 +120,7 @@ int getBallAngle() {
         int yDiff = ballBlock.m_y - pixyYC;
 
         int angle = atan2(yDiff, xDiff) * 180 / PI + 90;
-        if (angle < 0) angle += 360; // make sure angle is positive
-        angle = 360 - angle; // invert angle
-
-        return angle;
+        return LIM_ANGLE(angle);
     } else {
         return -1; // return -1 if no ball detected
     }
@@ -182,23 +181,21 @@ int ballTrack() {
     } else if (ballAngle >= 180 && ballAngle < 360) {
         moveAngle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8)));
     }
-    if (moveAngle < 0) moveAngle += 360;
 
     // Serial.print(ballDistInCm); Serial.print("\t");
     Serial.print("moveAng: ");
     Serial.print(moveAngle); Serial.print("\t");
 
-    return moveAngle;
+    return LIM_ANGLE(moveAngle);
 }
 
 // move to coordinates (x, y) with tolerance in cm
 int moveTo(int targetX, int targetY, int tolerance) {
     float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
-    targetAngle       = targetAngle < 0 ? targetAngle + 360 : targetAngle;
     float dist        = hypot(targetX - x, targetY - y); // distance to target coordinates
 
     if (dist > tolerance) { // not reached target, move
-        return targetAngle;
+        return LIM_ANGLE(targetAngle);
     } else { // reached target, stop
         return -1;
     }

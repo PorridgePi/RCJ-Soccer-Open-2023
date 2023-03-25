@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include <Arduino.h>
+#include <CommonUtils.h>
 #include <SerialPIO.h>
 
 #define BUFFER_LENGTH 200
@@ -155,7 +156,7 @@ class Camera : public SerialPIO {
                     if (angle < 0) angle += 360; // make sure angle is positive
                     angle = 360 - angle; // invert angle
                     prevBallAngle = angle;
-                    return angle;
+                    return LIM_ANGLE(angle);
                 }
             }
             if (millis() - ballLastDetected > BALL_TIMEOUT) {

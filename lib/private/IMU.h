@@ -2,7 +2,7 @@
 #define IMU_H
 
 #include <Arduino.h>
-#include <Definitions.h>
+#include <CommonUtils.h>
 #include <Wire.h>
 
 class IMU {
@@ -27,7 +27,7 @@ class IMU {
             _update();
             float angle = DEG(atan2(_mag[0], _mag[1])) - _zeroError;
 
-            return angle > 0 ? fmod(angle, 360) : fmod(angle, 360) + 360;
+            return LIM_ANGLE(angle);
         }
 
         void printRaw() {
