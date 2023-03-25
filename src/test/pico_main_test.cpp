@@ -19,8 +19,8 @@ Camera Pixy(PIXY_RX, PIXY_TX, pixyXC, pixyYC);
 Pixy2UART pixy;
 #endif
 
-#define MAX_BALL_DIST_THRESHOLD 420
-#define MIN_BALL_DIST_THRESHOLD 150
+#define MAX_BALL_DIST_THRESHOLD 380
+#define MIN_BALL_DIST_THRESHOLD 160
 // #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
 #define BALL_FUNCTION_THRESHOLD 0.0004f
 
@@ -30,6 +30,7 @@ int ballAngle;
 int ballDistance;
 
 #define MAX_SPEED 0.5
+#define SPEED 0.3
 
 PID pid(0.5, 0, 30, 1000);
 
@@ -169,37 +170,39 @@ void updateBallData() {
 }
 #endif
 
-void ballTrack() {
+int ballTrack() {
     // Move perpendicular to ball if near, move straight if far
 
-    if (ballAngle == -1) return; // no ball detected
+    if (ballAngle == -1) return -1; // no ball detected
 
     float ballDistInCm = BALL_FUNCTION_THRESHOLD * ballDistance * ballDistance;
 
     float moveAngle = 0;
 
-    if (ballAngle >= 0 && ballAngle < 180) {
+    if (ballAngle < 10 || ballAngle > 350) { // ball is in front (TODO: ball cap light gate integration?)
+        moveAngle = 0; // move straight
+    } else if (ballAngle >= 0 && ballAngle < 180) {
         moveAngle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
     } else if (ballAngle >= 180 && ballAngle < 360) {
         moveAngle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8)));
     }
     if (moveAngle < 0) moveAngle += 360;
 
-    driveBase.setDrive(ballAngle != -1 ? 0.15 : 0, moveAngle, constrain(rotateAngle/360, -1, 1));
+    // Serial.print(ballDistInCm); Serial.print("\t");
+    Serial.print("moveAng: "); Serial.print(moveAngle); Serial.print("\t");
 
-    Serial.print(ballDistInCm); Serial.print("\t");
-    Serial.print(moveAngle); Serial.print("\t");
+    return moveAngle;
 }
 
-void moveTo(int targetX, int targetY, int tolerance) {
+int moveTo(int targetX, int targetY, int tolerance) {
     float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
     targetAngle = targetAngle < 0 ? targetAngle + 360 : targetAngle;
     float dist = hypot(targetX - x, targetY - y);
 
-    if (dist > tolerance) {
-        driveBase.setDrive(0.2, targetAngle, constrain(rotateAngle/360, -1, 1));
-    } else {
-        driveBase.setDrive(0, 0, 0);
+    if (dist > tolerance) { // not reached target, move
+        return targetAngle;
+    } else { // reached target, stop
+        return -1;
     }
 }
 
@@ -273,13 +276,15 @@ void loop() {
     updateData();
     #endif
 
-    // moveTo(91, 122, 2);
     #ifdef USE_OFFICIAL_PIXY_LIB
     categoriseBlock();
     #else
     updateBallData();
-    // driveBase.setDrive(ballAngle != -1 ? 0.3 : 0, ballAngle, constrain(rotateAngle/360, -1, 1));
     #endif
+
+    int moveAngle = ballTrack(); // -1 if no ball detected
+    // int moveAngle = ballAngle; // direct movement straight to ball 
+    // int moveAngle = moveTo(91, 122, 2); // -1 if reached target
 
     // Serial.print(isOnLine); Serial.print("\t");
     Serial.print(ballAngle); Serial.print("\t");
@@ -311,6 +316,18 @@ void loop() {
     //     Serial.print(" height: ");
     //     Serial.print(block.m_height);
     // }
+
+    // Staying within bounds
+    if (isOnLine == true) { // failsafe: if on line, move to the center
+        moveAngle = moveTo(91, 122, 2);
+    }
+
+    // Movement
+    if (moveAngle == -1) { // stop if moveAngle is -1
+        driveBase.setDrive(0, 0, constrain(rotateAngle/360, -1, 1));
+    } else {
+        driveBase.setDrive(SPEED, moveAngle, constrain(rotateAngle/360, -1, 1));
+    }
 
     // Loop time
     Serial.print((float)(micros()-now)/1000); Serial.print("\t");
