@@ -12,6 +12,10 @@
 #define pixyXC 139 // x-coordinate of center of Pixy2 camera
 #define pixyYC 104 // y-coordinate of center of Pixy2 camera
 
+#define SIGNATURE_BALL 1 // signature of ball
+#define SIGNATURE_YELLOW_GOAL 2 // signature of yellow goal
+#define SIGNATURE_BLUE_GOAL 3 // signature of blue goal
+
 #ifndef USE_OFFICIAL_PIXY_LIB
 #include <Camera.h> // include personal Pixy2 library
 Camera Pixy(PIXY_RX, PIXY_TX, pixyXC, pixyYC); // Camera object from personal Pixy2 library
@@ -54,9 +58,7 @@ Lidar lidarRight(0x13, +4); // right LiDAR
 Lidar lidarBack(0x11, +5); // back LiDAR
 Lidar lidarLeft(0x10, +4); // left LiDAR
 
-float targetSpeed, rotationRate;
-
-#ifdef DEBUG_CORE
+#ifdef USE_MULTICORE
 volatile float botHeading; //  heading of robot (0 to 360 degrees), volatile for multicore access
 #else
 float botHeading; // heading of robot (0 to 360 degrees)
@@ -92,7 +94,7 @@ Block blueBlocks[10]; // array of blue goal blocks
 // gets distance to ball (arbitrary units), returns -1 if no ball detected
 int getBallDistance() {
     Block ballBlock = ballBlocks[0]; // get first ball block ONLY (Potential improvement?)
-    if (ballBlock.m_signature == 1) {
+    if (ballBlock.m_signature == SIGNATURE_BALL) {
         int xDiff = ballBlock.m_x - pixyXC;
         int yDiff = ballBlock.m_y - pixyYC;
 
@@ -106,7 +108,7 @@ int getBallDistance() {
 // gets angle of ball relative to robot (0 to 360 degrees), returns -1 if no ball detected
 int getBallAngle() {
     Block ballBlock = ballBlocks[0]; // uses first ball block ONLY (Potential improvement?)
-    if (ballBlock.m_signature == 1) {
+    if (ballBlock.m_signature == SIGNATURE_BALL) {
         int xDiff = ballBlock.m_x - pixyXC;
         int yDiff = ballBlock.m_y - pixyYC;
 
@@ -125,13 +127,13 @@ void categoriseBlock() {
     int numBall = 0, numYellow = 0, numBlue = 0; // to be used as index for arrays
     for (int i = 0; i < numBlocks; i++) {
         Block block = blocks[i];
-        if (block.m_signature == 1) {
+        if (block.m_signature == SIGNATURE_BALL) {
             ballBlocks[numBall] = block;
             numBall++;
-        } else if (block.m_signature == 2) {
+        } else if (block.m_signature == SIGNATURE_YELLOW_GOAL) {
             yellowBlocks[numYellow] = block;
             numYellow++;
-        } else if (block.m_signature == 3) {
+        } else if (block.m_signature == SIGNATURE_BLUE_GOAL) {
             blueBlocks[numBlue] = block;
             numBlue++;
         }
