@@ -286,37 +286,6 @@ void loop() {
     // int moveAngle = ballAngle; // direct movement straight to ball 
     // int moveAngle = moveTo(91, 122, 2); // -1 if reached target
 
-    // Serial.print(isOnLine); Serial.print("\t");
-    Serial.print(ballAngle); Serial.print("\t");
-    Serial.print(ballDistance); Serial.print("\t");
-    // Serial.print(botHeading); Serial.print("\t");
-    // Serial.print(frontDist); Serial.print("\t");
-    // Serial.print(backDist); Serial.print("\t");
-    // Serial.print(leftDist); Serial.print("\t");
-    // Serial.print(rightDist); Serial.print("\t");
-    // Serial.print(x); Serial.print("\t");
-    // Serial.print(y); Serial.print("\t");
-
-    // Serial.print(numBlocks); Serial.print("\t");
-
-    // for (int i = 0; i < numBlocks; i++) {
-    //     Block block = blocks[i];
-    //     Serial.print(" block ");
-    //     Serial.print(i);
-    //     Serial.print(": ");
-
-    //     Serial.print("sig: ");
-    //     Serial.print(block.m_signature);
-    //     Serial.print(" x: ");
-    //     Serial.print(block.m_x);
-    //     Serial.print(" y: ");
-    //     Serial.print(block.m_y);
-    //     Serial.print(" width: ");
-    //     Serial.print(block.m_width);
-    //     Serial.print(" height: ");
-    //     Serial.print(block.m_height);
-    // }
-
     // Staying within bounds
     if (isOnLine == true) { // failsafe: if on line, move to the center
         moveAngle = moveTo(91, 122, 2);
@@ -328,6 +297,17 @@ void loop() {
     } else {
         driveBase.setDrive(SPEED, moveAngle, constrain(rotateAngle/360, -1, 1));
     }
+
+    // Serial.print(isOnLine); Serial.print("\t");
+    Serial.print(ballAngle); Serial.print("\t");
+    Serial.print(ballDistance); Serial.print("\t");
+    // Serial.print(botHeading); Serial.print("\t");
+    // Serial.print(frontDist); Serial.print("\t");
+    // Serial.print(backDist); Serial.print("\t");
+    // Serial.print(leftDist); Serial.print("\t");
+    // Serial.print(rightDist); Serial.print("\t");
+    // Serial.print(x); Serial.print("\t");
+    // Serial.print(y); Serial.print("\t");
 
     // Loop time
     Serial.print((float)(micros()-now)/1000); Serial.print("\t");
