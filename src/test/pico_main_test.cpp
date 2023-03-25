@@ -4,14 +4,24 @@
 #include <Lidar.h>
 #include <PID.h>
 #include <Wire.h>
+
+#define USE_OFFICIAL_PIXY_LIB
+
+#define pixyXC 139
+#define pixyYC 104
+
+#ifndef USE_OFFICIAL_PIXY_LIB
 #include <Camera.h>
+Camera Pixy(PIXY_RX, PIXY_TX, pixyXC, pixyYC);
+#else
+#include <Pixy2UART.h>
+Pixy2UART pixy;
+#endif
 
 #define MAX_BALL_DIST_THRESHOLD 420
 #define MIN_BALL_DIST_THRESHOLD 150
 // #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
 #define BALL_FUNCTION_THRESHOLD 0.0004f
-
-Camera Pixy(PIXY_RX, PIXY_TX, 139, 104);
 
 bool isOnLine;
 
@@ -67,11 +77,96 @@ void blinkLED(int interval = 50) {
     }
 }
 
+#ifdef USE_OFFICIAL_PIXY_LIB
+volatile int numBlocks;
+Block blocks[50];
+
+Block ballBlocks[10];
+Block yellowBlocks[10];
+Block blueBlocks[10];
+
+int getBallDistance() {
+    Block ballBlock = ballBlocks[0];
+    if (ballBlock.m_signature == 1) {
+        int xDiff = ballBlock.m_x - pixyXC;
+        int yDiff = ballBlock.m_y - pixyYC;
+
+        // max distance = 5 * 84 = 420 since max change is around 84 pixels
+        return constrain(5 * hypot(xDiff, yDiff), 0, 3000);
+    } else {
+        return -1;
+    }
+}
+
+int getBallAngle() {
+    Block ballBlock = ballBlocks[0];
+    if (ballBlock.m_signature == 1) {
+        int xDiff = ballBlock.m_x - pixyXC;
+        int yDiff = ballBlock.m_y - pixyYC;
+
+        int angle = atan2(yDiff, xDiff) * 180 / PI + 90;
+        if (angle < 0) angle += 360; // make sure angle is positive
+        angle = 360 - angle; // invert angle
+
+        return angle;
+    } else {
+        return -1;
+    }
+}
+
+void categoriseBlock() {
+    int numBall = 0, numYellow = 0, numBlue = 0;
+    for (int i = 0; i < numBlocks; i++) {
+        Block block = blocks[i];
+        if (block.m_signature == 1) {
+            ballBlocks[numBall] = block;
+            numBall++;
+        } else if (block.m_signature == 2) {
+            yellowBlocks[numYellow] = block;
+            numYellow++;
+        } else if (block.m_signature == 3) {
+            blueBlocks[numBlue] = block;
+            numBlue++;
+        }
+    }
+
+
+    static unsigned long ballLastMillis = millis();
+    if (numBall > 0) {
+        ballAngle = getBallAngle();
+        ballDistance = getBallDistance();
+    } else {
+        if (millis() - ballLastMillis > 1000) {
+            ballAngle = -1;
+            ballDistance = -1;
+        }
+    }
+
+    // for (int i = 0; i < numBlocks; i++) {
+    //     Block block = blocks[i];
+    //     Serial.print(" block ");
+    //     Serial.print(i);
+    //     Serial.print(": ");
+
+    //     Serial.print("sig: ");
+    //     Serial.print(block.m_signature);
+    //     Serial.print(" x: ");
+    //     Serial.print(block.m_x);
+    //     Serial.print(" y: ");
+    //     Serial.print(block.m_y);
+    //     Serial.print(" width: ");
+    //     Serial.print(block.m_width);
+    //     Serial.print(" height: ");
+    //     Serial.print(block.m_height);
+    // }
+}
+#else
 void updateBallData() {
     Pixy.isNewDataPresent(); // checks if new data is present and parses it
     ballAngle = Pixy.getBallAngle();
     ballDistance = Pixy.getBallDistance();
 }
+#endif
 
 void ballTrack() {
     // Move perpendicular to ball if near, move straight if far
@@ -148,7 +243,10 @@ void updateData() {
 void setup() {
     // UART
     Serial.begin(9600);
+
+    #ifndef USE_OFFICIAL_PIXY_LIB
     Pixy.begin(19200);
+    #endif
 
     #ifndef USE_MULTICORE
     setupDevices();
@@ -162,6 +260,9 @@ void setup1() {
     #ifdef USE_MULTICORE
     setupDevices();
     #endif
+    #ifdef USE_OFFICIAL_PIXY_LIB
+    pixy.init();
+    #endif
 }
 
 void loop() {
@@ -171,10 +272,13 @@ void loop() {
     updateData();
     #endif
 
-    // ballTrack();
     // moveTo(91, 122, 2);
+    #ifdef USE_OFFICIAL_PIXY_LIB
+    categoriseBlock();
+    #else
     updateBallData();
-    driveBase.setDrive(ballAngle != -1 ? 0.3 : 0, ballAngle, constrain(rotateAngle/360, -1, 1));
+    // driveBase.setDrive(ballAngle != -1 ? 0.3 : 0, ballAngle, constrain(rotateAngle/360, -1, 1));
+    #endif
 
     // Serial.print(isOnLine); Serial.print("\t");
     Serial.print(ballAngle); Serial.print("\t");
@@ -187,6 +291,26 @@ void loop() {
     // Serial.print(x); Serial.print("\t");
     // Serial.print(y); Serial.print("\t");
 
+    // Serial.print(numBlocks); Serial.print("\t");
+
+    // for (int i = 0; i < numBlocks; i++) {
+    //     Block block = blocks[i];
+    //     Serial.print(" block ");
+    //     Serial.print(i);
+    //     Serial.print(": ");
+
+    //     Serial.print("sig: ");
+    //     Serial.print(block.m_signature);
+    //     Serial.print(" x: ");
+    //     Serial.print(block.m_x);
+    //     Serial.print(" y: ");
+    //     Serial.print(block.m_y);
+    //     Serial.print(" width: ");
+    //     Serial.print(block.m_width);
+    //     Serial.print(" height: ");
+    //     Serial.print(block.m_height);
+    // }
+
     // Loop time
     Serial.print((float)(micros()-now)/1000); Serial.print("\t");
     Serial.println();
@@ -195,7 +319,18 @@ void loop() {
 }   
 
 void loop1() {
+    #ifdef USE_OFFICIAL_PIXY_LIB
+    pixy.ccc.getBlocks();
+
+    numBlocks = pixy.ccc.numBlocks;
+    memset(blocks, 0, sizeof(blocks));
+    for (int i = 0; i < numBlocks; i++) {
+        memcpy(&blocks[i], &pixy.ccc.blocks[i], sizeof(Block));
+    }
+    #else
     Pixy.readData();
+    #endif
+
     #ifdef USE_MULTICORE
     updateData();
     #endif
