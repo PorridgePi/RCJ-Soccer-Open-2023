@@ -2,7 +2,8 @@
 #define CAMERA_H
 
 #include <Arduino.h>
-#include <SoftwareSerial.h>
+#include <CommonUtils.h>
+#include <SerialPIO.h>
 
 #define BUFFER_LENGTH 200
 #define BALL_TIMEOUT 10
@@ -13,10 +14,10 @@ struct Block {
     int  signature, x, y, width, height;
 };
 
-class Camera : public SoftwareSerial {
+class Camera : public SerialPIO {
     public:
         Camera(pin_size_t rx, pin_size_t tx, int xC, int yC) :
-            SoftwareSerial(rx, tx), _xC(xC), _yC(yC) {
+            SerialPIO(tx, rx, 512), _xC(xC), _yC(yC) {
             _maxLength = 4;
         }
 
@@ -24,6 +25,11 @@ class Camera : public SoftwareSerial {
             // static int time;
             if (_newData == true) {
                 parseData();
+                // for (int i = 0; i < 100; i++) {
+                //     Serial.print(_buffer[i]);
+                //     Serial.print(" ");
+                // }
+                // Serial.println();
                 memset(_buffer, 0, sizeof(_buffer));
                 _maxLength = 4;
                 _newData = false;
@@ -39,13 +45,14 @@ class Camera : public SoftwareSerial {
             static int  i              = 2;
             static bool recvInProgress = false;
 
-            static uint8_t writeBuffer[6] = {174, 193, 32, 2, 255, 255};
-            if (SoftwareSerial::available() == 0) SoftwareSerial::write(writeBuffer, 6);
+            static uint8_t writeBuffer[6] = {174, 193, 32, 2, 7, 255};
+            if (SerialPIO::available() == 0) SerialPIO::write(writeBuffer, 6);
 
-            while (SoftwareSerial::available() > 0 && _newData == false) {
+            while (SerialPIO::available() > 0 && _newData == false) {
                 prevByte    = currentByte;
-                currentByte = SoftwareSerial::read();
-
+                currentByte = SerialPIO::read();
+                Serial.print(currentByte);
+                Serial.print(" ");
                 if (recvInProgress == true) {
                     if (i == 3) {
                         if (currentByte % 14 == 0) {
@@ -79,23 +86,32 @@ class Camera : public SoftwareSerial {
             // bytes 14-15 = height
 
             if (_buffer[2] == 33 && _buffer[6] > 0) {
-                Serial.print(_maxLength); Serial.print("A\t");
+                // Serial.print(_maxLength); Serial.print("A\t");
                 _numBlocks = (_maxLength - 6) / 14;
                 for (int i = 0; i < _numBlocks; i++) {
                     _signature         = constrain(_buffer[i * 14 + 6] + _buffer[i * 14 + 7] * 256, 0, 255);
-                    if (_signature <= 0 || _signature > 3) continue;
+                    // if (_signature <= 0 || _signature > 3) continue;
                     _blocks[i].signature = _signature;
                     _blocks[i].x = constrain(_buffer[i * 14 + 8] + _buffer[i * 14 + 9] * 256, 0, 315);
                     _blocks[i].y = constrain(_buffer[i * 14 + 10] + _buffer[i * 14 + 11] * 256, 0, 207);
                     _blocks[i].width = constrain(_buffer[i * 14 + 12] + _buffer[i * 14 + 13] * 256, 0, 316);
                     _blocks[i].height = constrain(_buffer[i * 14 + 14] + _buffer[i * 14 + 15] * 256, 0, 208);
-                    if (false) {
-                        Serial.print(_blocks[i].signature);
-                        Serial.print("\t");
-                        Serial.print(_blocks[i].x);
-                        Serial.print("\t");
-                        Serial.print(_blocks[i].y);
-                        Serial.print("\t");
+                    
+                    if (true) {
+                        // Serial.print(_blocks[i].signature);
+                        // Serial.print("\t");
+                        // Serial.print(_blocks[i].x);
+                        // Serial.print("\t");
+                        // Serial.print(_blocks[i].y)
+                        // Serial.print("\t");
+                        // Serial.print(_buffer[i * 14 + 8]); Serial.print("\t");
+                        // Serial.print(_buffer[i * 14 + 9]); Serial.print("\t");
+                        // Serial.print(_buffer[i * 14 + 10]); Serial.print("\t");
+                        // Serial.print(_buffer[i * 14 + 11]); Serial.print("\t");
+                        // Serial.print(_buffer[i * 14 + 12]); Serial.print("\t");
+                        // Serial.print(_buffer[i * 14 + 13]); Serial.print("\t");
+                        // Serial.print(_buffer[i * 14 + 14]); Serial.print("\t");
+                        // Serial.print(_buffer[i * 14 + 15]); Serial.print("\t");
                     }
                 }
                 Serial.println("");
@@ -140,7 +156,7 @@ class Camera : public SoftwareSerial {
                     if (angle < 0) angle += 360; // make sure angle is positive
                     angle = 360 - angle; // invert angle
                     prevBallAngle = angle;
-                    return angle;
+                    return LIM_ANGLE(angle);
                 }
             }
             if (millis() - ballLastDetected > BALL_TIMEOUT) {

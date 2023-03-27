@@ -11,6 +11,8 @@ void setup() {
 }
 
 void loop() {
+    long long time = micros();
+
     // grab blocks!
     pixy.ccc.getBlocks();
 
@@ -41,9 +43,13 @@ void loop() {
             Serial.print(" index: ");
             Serial.print(block.m_index);
             Serial.print(" age: ");
-            Serial.println(block.m_age);
+            Serial.print(block.m_age);
+            Serial.print('\t');
         }
     }
+
+    Serial.print((float) (micros() - time) / 1000);
+    Serial.println("ms");
 }
 
 // uint16_t m_signature;
