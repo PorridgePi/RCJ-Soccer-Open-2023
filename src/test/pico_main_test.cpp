@@ -11,12 +11,14 @@
 #define USE_MULTICORE         // if defined, use second core for data update (NOTE: Overwritten by USE_OFFICIAL_PIXY_LIB)
 #define USE_OFFICIAL_PIXY_LIB // if defined, use official Pixy2 library (NOTE: Overwrites USE_MULTICORE)
 
+#define GOAL_YELLOW false // colour of goal to score on (YELLOW or BLUE)
+
 #define pixyXC 139 // x-coordinate of center of Pixy2 camera
 #define pixyYC 104 // y-coordinate of center of Pixy2 camera
 
 #define SIGNATURE_BALL        1 // signature of ball
-#define SIGNATURE_YELLOW_GOAL 2 // signature of yellow goal
-#define SIGNATURE_BLUE_GOAL   3 // signature of blue goal
+#define SIGNATURE_BLUE_GOAL   2 // signature of blue goal
+#define SIGNATURE_YELLOW_GOAL 3 // signature of yellow goal
 
 #define MAX_BALL_DIST_THRESHOLD 380 // max distance to ball before out of range
 #define MIN_BALL_DIST_THRESHOLD 160 // min distance to ball
@@ -45,6 +47,10 @@ Camera Pixy(PIXY_RX, PIXY_TX, pixyXC, pixyYC); // Camera object from personal Pi
 // Ball
 int ballAngle;    // angle of ball relative to robot (0 to 360 degrees)
 int ballDistance; // distance to ball (arbitrary units due to non-linear relationship caused by mirror distortion)
+int emptyLightGateThreshold;
+
+// Goals
+float goalAngle;
 
 // Bottom Plate
 bool isOnLine; // true (1) if robot is on line (i.e. any bottom plate TEMT6000 exceeds threshold), false (0) if not
@@ -58,6 +64,8 @@ Motor motorBR(26, 22, MAX_SPEED);                    // bottom left JST, bottom 
 Motor motorBL(3, 7, MAX_SPEED);                      // bottom right JST, bottom left motor
 Motor motorFL(11, 9, MAX_SPEED);                     // top right JST, top left motor
 Drive driveBase(motorFR, motorBR, motorBL, motorFL); // drive base controlling all 4 motors
+float speed = SPEED;
+float speedX, speedY, moveAngle;
 
 // LiDAR
 Lidar lidarFront(0x12, -5); // front LiDAR
@@ -79,6 +87,7 @@ volatile float botHeading; //  heading of robot (0 to 360 degrees), volatile for
 float botHeading; // heading of robot (0 to 360 degrees)
 #endif
 float rotateAngle; // for compass correction (-180 to 180 degrees)
+float goalRotateAngle;
 
 //// ** FUNCTIONS ** ////
 // continuous async blink LED to indicate program is running and Pico has not hang
@@ -112,6 +121,57 @@ int getBallDistance() {
     }
 }
 
+void deconstructSpeed() {
+    speedX = speed * sin(RAD(moveAngle));
+    speedY = speed * cos(RAD(moveAngle));
+}
+
+void constructSpeed() {
+    speed = sqrt(speedX * speedX + speedY * speedY);
+    moveAngle = LIM_ANGLE(DEG(atan2(speedX, speedY)));
+}
+
+// void stayWithinBounds() {
+//     const int borderDist = 12;
+//     const int borderTolerance = 3;
+//     if (x > (0 + (borderDist + borderTolerance))) {
+//     }
+// }
+
+int confidence() {
+    float sumX = leftDist + rightDist;
+    float sumY = frontDist + backDist;
+
+    float confX = constrain(sumX/(182+4), 0, 1);
+    float confY = constrain(sumY/(243-12), 0, 1);
+
+    deconstructSpeed();
+    speedX = speedX * pow(confX, 1);
+    speedY = speedY * pow(confY, 1);
+    constructSpeed();
+
+    return 0;
+}
+
+// true (1) if ball is captured, false (0) if not
+bool isBallCaptured() {
+    if (analogRead(LIGHT_GATE_PIN) < emptyLightGateThreshold - LIGHT_GATE_DIFFERENCE_THRESHOLD) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+int calibrateLightGate() {
+    delay(500);
+    int sum = 0;
+    for (int i = 0; i < 100; i++) {
+        sum += analogRead(LIGHT_GATE_PIN);
+    }
+    return sum / 100;
+}
+
 // gets angle of ball relative to robot (0 to 360 degrees), returns -1 if no ball detected
 int getBallAngle() {
     Block ballBlock = ballBlocks[0]; // uses first ball block ONLY (Potential improvement?)
@@ -124,6 +184,24 @@ int getBallAngle() {
     } else {
         return -1; // return -1 if no ball detected
     }
+}
+
+float getGoalAngle(int numBlocks) {
+    float angle;
+    float maxSize = 0;
+    for (int i = 0; i < numBlocks; i++) {
+        Block block = (GOAL_YELLOW == true ? yellowBlocks[i] : blueBlocks[i]);
+        if (block.m_signature == (GOAL_YELLOW == true ? SIGNATURE_YELLOW_GOAL : SIGNATURE_BLUE_GOAL)) {
+            float area = block.m_height * block.m_width;
+            if (area > maxSize) {
+                int xDiff = block.m_x - pixyXC;
+                int yDiff = block.m_y - pixyYC;
+                maxSize = area;
+                angle = atan2(yDiff, xDiff) * 180 / PI + 90;
+            }
+        }
+    }
+    return 360 - LIM_ANGLE(angle);
 }
 
 // categorises blocks into ball, yellow goal, and blue goal, and updates ball angle and distance
@@ -156,6 +234,18 @@ void categoriseBlock() {
             ballDistance = -1;
         }
     }
+
+    // Update goal angle and distance
+    static unsigned long goalLastMillis = millis(); // last time goal was detected
+    if ((GOAL_YELLOW == true ? numYellow : numBlue) > 0) {
+        goalAngle = getGoalAngle((GOAL_YELLOW == true ? numYellow : numBlue));
+    } else { // no goal detected
+        // if no goal detected for 1 second, reset goal angle and distance
+        // time is to prevent false reset (i.e. due to lag or blind spot)
+        if (millis() - goalLastMillis > 1000) {
+            goalAngle = -1;
+        }
+    }
 }
 #else
 void updateBallData() {
@@ -174,7 +264,7 @@ int ballTrack() {
 
     float moveAngle = 0;
 
-    if (ballAngle < 10 || ballAngle > 350) { // ball is in front (TODO: ball cap light gate integration?)
+    if (ballAngle < 7 || ballAngle > 353) { // ball is in front (TODO: ball cap light gate integration?)
         moveAngle = 0; // move straight
     } else if (ballAngle >= 0 && ballAngle < 180) {
         moveAngle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
@@ -183,8 +273,8 @@ int ballTrack() {
     }
 
     // Serial.print(ballDistInCm); Serial.print("\t");
-    Serial.print("moveAng: ");
-    Serial.print(moveAngle); Serial.print("\t");
+    // Serial.print("moveAng: ");
+    // Serial.print(moveAngle); Serial.print("\t");
 
     return LIM_ANGLE(moveAngle);
 }
@@ -228,6 +318,8 @@ void setupDevices() {
 
     // Pin for bottom plate
     pinMode(BOTTOM_PLATE_PIN, INPUT);
+    pinMode(LIGHT_GATE_PIN, INPUT);
+    emptyLightGateThreshold = calibrateLightGate();
 }
 
 // update data (LiDARs, IMU, bottom plate) - called in either core 0 or 1
@@ -239,7 +331,6 @@ void updateData() {
         lastMillis = millis();
     }
     botHeading  = imu.readAngle();                                   // from 0 to 360
-    rotateAngle = botHeading <= 180 ? botHeading : botHeading - 360; // from -180 to 180
     isOnLine    = digitalRead(BOTTOM_PLATE_PIN);                     // 1 if on line, 0 if not on line
 }
 
@@ -274,6 +365,7 @@ void setup1() {
 // core 0 loop
 void loop() {
     unsigned long long now = micros(); // loop time
+    speed = SPEED;
 
     //// ** DATA UPDATE & PROCESSING ** ////
     #if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
@@ -287,26 +379,50 @@ void loop() {
     #endif
 
     //// ** STRATEGY ** ////
-    int moveAngle = ballTrack(); // -1 if no ball detected
-    // int moveAngle = ballAngle; // direct movement straight to ball
-    // int moveAngle = moveTo(91, 122, 2); // -1 if reached target
+    if (isBallCaptured()) {
+        moveAngle = goalAngle;
+        goalRotateAngle = goalAngle / 3;
+    } else {
+        goalRotateAngle = 0;
+        if (ballAngle == -1) { // no ball detected
+            moveAngle = moveTo(91, 122, 2); // move to center
+        } else { // ball detected
+            moveAngle = ballTrack(); // move perpendicular to ball
+            if (moveAngle == 0) { // if ball is in front, move straight
+
+            }
+        }
+    }
+    
+
+    // moveAngle = ballTrack(); // -1 if no ball detected
+    // moveAngle = ballAngle; // direct movement straight to ball
+    // moveAngle = moveTo(91, 122, 2); // -1 if reached target
+
+    Serial.print(moveAngle); Serial.print("\t");
+    Serial.print(ballAngle); Serial.print("\t");
+
+    confidence();
 
     // Staying within bounds
     if (isOnLine == true) { // failsafe: if on line, move to the center
         moveAngle = moveTo(91, 122, 2);
     }
 
+    rotateAngle = LIM_ANGLE(botHeading - goalRotateAngle) <= 180 ? LIM_ANGLE(botHeading - goalRotateAngle) : LIM_ANGLE(botHeading -  goalRotateAngle) - 360; // from -180 to 180
+
     //// ** MOVEMENT ** ////
     if (moveAngle == -1) { // stop if moveAngle is -1
-        driveBase.setDrive(0, 0, constrain(rotateAngle / 360, -1, 1));
+        driveBase.setDrive(speed, 0, constrain(rotateAngle / 360, -1, 1));
     } else {
-        driveBase.setDrive(SPEED, moveAngle, constrain(rotateAngle / 360, -1, 1));
+        driveBase.setDrive(speed, moveAngle, constrain(rotateAngle / 360, -1, 1));
     }
 
     //// ** DEBUG ** ////
+    Serial.print(goalAngle); Serial.print("\t");
     // Serial.print(isOnLine); Serial.print("\t");
-    Serial.print(ballAngle); Serial.print("\t");
-    Serial.print(ballDistance); Serial.print("\t");
+    // Serial.print(ballAngle); Serial.print("\t");
+    // Serial.print(ballDistance); Serial.print("\t");
     // Serial.print(botHeading); Serial.print("\t");
     // Serial.print(frontDist); Serial.print("\t");
     // Serial.print(backDist); Serial.print("\t");
