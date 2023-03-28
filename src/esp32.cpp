@@ -4,7 +4,7 @@
 #include <Temt.h>
 #include <Wire.h>
 
-#define TEMT_THRESHOLD  1000 // to be calibrated
+#define TEMT_THRESHOLD  2000 // to be calibrated
 #define DEBUG           false
 #define DEBUG_LOOP_TIME true
 #define NUM_LEDS        10
