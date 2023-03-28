@@ -6,6 +6,7 @@
 #include <Lidar.h>
 #include <PID.h>
 #include <Wire.h>
+#include <Kicker.h>
 
 //// ** CONFIG ** ////
 #define USE_MULTICORE         // if defined, use second core for data update (NOTE: Overwritten by USE_OFFICIAL_PIXY_LIB)
@@ -88,6 +89,9 @@ float botHeading; // heading of robot (0 to 360 degrees)
 #endif
 float rotateAngle; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
+
+// Kicker
+Kicker kicker(2);
 
 //// ** FUNCTIONS ** ////
 // continuous async blink LED to indicate program is running and Pico has not hang
@@ -229,7 +233,7 @@ void categoriseBlock() {
     } else { // no ball detected
         // if no ball detected for 1 second, reset ball angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
-        if (millis() - ballLastMillis > 1000) {
+        if (millis() - ballLastMillis > 2000) {
             ballAngle    = -1;
             ballDistance = -1;
         }
@@ -255,28 +259,33 @@ void updateBallData() {
 }
 #endif
 
-int ballTrack() {
+float ballTrack() {
     // Move perpendicular to ball if near, move straight if far
-
-    if (ballAngle == -1) return -1; // no ball detected
 
     float ballDistInCm = BALL_FUNCTION_THRESHOLD * ballDistance * ballDistance; // converts ball distance to cm
 
-    float moveAngle = 0;
+    float angle = 0;
 
-    if (ballAngle < 7 || ballAngle > 353) { // ball is in front (TODO: ball cap light gate integration?)
-        moveAngle = 0; // move straight
-    } else if (ballAngle >= 0 && ballAngle < 180) {
-        moveAngle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
-    } else if (ballAngle >= 180 && ballAngle < 360) {
-        moveAngle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8)));
+    if (ballAngle < 13 || ballAngle > 347) { // ball is in front (TODO: ball cap light gate integration?)
+        if (ballDistance < 200) { // ball is near
+            return -1; 
+        }
+        angle = 0; // if far, move forward
+    } else if (ballAngle >= 0 && ballAngle < 90) { // front right
+        angle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 1));
+    } else if (ballAngle >= 90 && ballAngle < 180) {
+        angle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
+    } else if (ballAngle >= 180 && ballAngle < 270) {
+        angle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8)));
+    } else if (ballAngle >= 270 && ballAngle < 360) { // front left
+        angle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 1)));
     }
 
     // Serial.print(ballDistInCm); Serial.print("\t");
-    // Serial.print("moveAng: ");
-    // Serial.print(moveAngle); Serial.print("\t");
+    // Serial.print("angle: ");
+    // Serial.print(angle); Serial.print("\t");
 
-    return LIM_ANGLE(moveAngle);
+    return LIM_ANGLE(angle);
 }
 
 // move to coordinates (x, y) with tolerance in cm
@@ -378,22 +387,39 @@ void loop() {
     updateBallData();
     #endif
 
+    bool isAiming = false;
+    static unsigned long lastKickerMillis = millis();
+
     //// ** STRATEGY ** ////
     if (isBallCaptured()) {
-        moveAngle = goalAngle;
-        goalRotateAngle = goalAngle / 3;
+        isAiming = true;
+        if (millis() - lastKickerMillis > 500) {
+            if (goalAngle < 10 || goalAngle > 350) {
+                kicker.kick();
+                lastKickerMillis = millis();
+            }
+        }
     } else {
-        goalRotateAngle = 0;
         if (ballAngle == -1) { // no ball detected
             moveAngle = moveTo(91, 122, 2); // move to center
         } else { // ball detected
             moveAngle = ballTrack(); // move perpendicular to ball
-            if (moveAngle == 0) { // if ball is in front, move straight
-
+            if (moveAngle == -1) { // if ball is in front of robot
+                isAiming = true;
             }
         }
     }
-    
+
+    // if (isAiming == true) {
+    //     moveAngle = goalAngle;
+    //     goalRotateAngle = (goalAngle < 180 ? goalAngle : goalAngle - 360);
+    // } else {
+    //     goalRotateAngle = 0;
+    // }
+
+    if (ballAngle != -1) { // if ball present, rotate robot to face the goal
+        goalRotateAngle = (goalAngle < 180 ? goalAngle : goalAngle - 360);
+    }
 
     // moveAngle = ballTrack(); // -1 if no ball detected
     // moveAngle = ballAngle; // direct movement straight to ball
@@ -401,7 +427,11 @@ void loop() {
 
     Serial.print(moveAngle); Serial.print("\t");
     Serial.print(ballAngle); Serial.print("\t");
-
+    
+    if (moveAngle == -1) { // stop if moveAngle is -1
+        speed = 0;
+    }
+    
     confidence();
 
     // Staying within bounds
@@ -412,14 +442,11 @@ void loop() {
     rotateAngle = LIM_ANGLE(botHeading - goalRotateAngle) <= 180 ? LIM_ANGLE(botHeading - goalRotateAngle) : LIM_ANGLE(botHeading -  goalRotateAngle) - 360; // from -180 to 180
 
     //// ** MOVEMENT ** ////
-    if (moveAngle == -1) { // stop if moveAngle is -1
-        driveBase.setDrive(speed, 0, constrain(rotateAngle / 360, -1, 1));
-    } else {
-        driveBase.setDrive(speed, moveAngle, constrain(rotateAngle / 360, -1, 1));
-    }
+    driveBase.setDrive(speed, moveAngle, constrain(rotateAngle / 540, -1, 1));
+
 
     //// ** DEBUG ** ////
-    Serial.print(goalAngle); Serial.print("\t");
+    // Serial.print(goalAngle); Serial.print("\t");
     // Serial.print(isOnLine); Serial.print("\t");
     // Serial.print(ballAngle); Serial.print("\t");
     // Serial.print(ballDistance); Serial.print("\t");
