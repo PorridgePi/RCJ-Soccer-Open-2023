@@ -3,10 +3,10 @@
 
 #define MAX_SPEED 0.5
 
-Motor motorFR(21, 20, MAX_SPEED); // top left JST, top right motor
-Motor motorBR(26, 22, MAX_SPEED); // bottom left JST, bottom right motor
-Motor motorBL(3, 7, MAX_SPEED);   // bottom right JST, bottom left motor
-Motor motorFL(11, 9, MAX_SPEED);  // top right JST, top left motor
+Motor motorFR(21, 20); // top left JST, top right motor
+Motor motorBR(26, 22); // bottom left JST, bottom right motor
+Motor motorBL(3, 7);   // bottom right JST, bottom left motor
+Motor motorFL(11, 9);  // top right JST, top left motor
 
 Drive driveBase(motorFR, motorBR, motorBL, motorFL);
 

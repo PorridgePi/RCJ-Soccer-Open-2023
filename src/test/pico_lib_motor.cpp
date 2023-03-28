@@ -3,10 +3,10 @@
 
 #define MAX_SPEED 0.5
 
-Motor motor1(21, 20, MAX_SPEED); // top left JST, top right motor
-Motor motor2(26, 22, MAX_SPEED); // bottom left JST, bottom right motor
-Motor motor3(3, 7, MAX_SPEED);   // bottom right JST, bottom left motor
-Motor motor4(11, 9, MAX_SPEED);  // top right JST, top left motor
+Motor motor1(21, 20); // top left JST, top right motor
+Motor motor2(26, 22); // bottom left JST, bottom right motor
+Motor motor3(3, 7);   // bottom right JST, bottom left motor
+Motor motor4(11, 9);  // top right JST, top left motor
 
 // Conflicting PWM pins:
 

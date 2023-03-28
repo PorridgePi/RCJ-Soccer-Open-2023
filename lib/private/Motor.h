@@ -5,14 +5,14 @@
 
 class Motor {
     public:
-        Motor(int pin0, int pin1, float maxSpeed) :
-            _pin0(pin0), _pin1(pin1), _maxSpeed(maxSpeed) {
+        Motor(int pin0, int pin1) :
+            _pin0(pin0), _pin1(pin1) {
             pinMode(_pin0, OUTPUT);
             pinMode(_pin1, OUTPUT);
         }
 
         void setSpeed(float speed) {
-            _speed = constrain(speed, -_maxSpeed, _maxSpeed);
+            _speed = constrain(speed, -1, 1);
             if (_speed >= 0) {
                 analogWrite(_pin0, _speed * 255);
                 analogWrite(_pin1, 0);
@@ -26,7 +26,6 @@ class Motor {
         const int _pin0;
         const int _pin1;
         float     _speed;
-        float     _maxSpeed;
 };
 
 #endif
