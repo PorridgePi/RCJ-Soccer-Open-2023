@@ -120,7 +120,7 @@ int getBallAngle() {
         int yDiff = ballBlock.m_y - pixyYC;
 
         int angle = atan2(yDiff, xDiff) * 180 / PI + 90;
-        return LIM_ANGLE(angle);
+        return 360 - LIM_ANGLE(angle);
     } else {
         return -1; // return -1 if no ball detected
     }
@@ -319,7 +319,7 @@ void loop() {
     Serial.print((float)(micros()-now)/1000); Serial.print("\t");
     Serial.println();
 
-    // blinkLED();
+    blinkLED();
 }
 
 // core 1 loop

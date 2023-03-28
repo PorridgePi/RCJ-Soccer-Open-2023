@@ -10,9 +10,9 @@ class Kicker {
             pinMode(_pin, OUTPUT);
         };
         void kick() {
-            digitalWrite(_pin, HIGH);
-            delay(100);
             digitalWrite(_pin, LOW);
+            delay(50);
+            digitalWrite(_pin, HIGH);
         };
 
     private:
