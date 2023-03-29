@@ -10,4 +10,6 @@
 // Limit angle to 0 to 360 degrees
 #define LIM_ANGLE(angle) (angle > 0 ? fmod(angle, 360) : fmod(angle, 360) + 360)
 
+#define DELTA_ANGLE(a, b) ((a - b + 180) % 360 - 180)
+
 #endif
