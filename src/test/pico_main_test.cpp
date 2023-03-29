@@ -26,7 +26,6 @@
 // #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
 #define BALL_FUNCTION_THRESHOLD 0.0004f // constant for distance to cm conversion
 
-#define MAX_SPEED 0.5 // max speed of robot (0.0 to 1.0), failsafe and constrains motor drivers directly
 #define SPEED     0.3 // speed of robot (0.0 to 1.0)
 
 //// ** DECLARATIONS ** ////
@@ -55,6 +54,20 @@ float goalAngle;
 
 // Bottom Plate
 bool isOnLine; // true (1) if robot is on line (i.e. any bottom plate TEMT6000 exceeds threshold), false (0) if not
+
+size_t timeAtLastRise;
+size_t timeBetweenSubsequentRises;
+float lineAngle;
+
+void lineFall() {
+    timeBetweenSubsequentRises = micros() - timeAtLastRise;
+    timeAtLastRise = micros();
+}
+
+void lineRise() {
+    lineAngle = (micros() - timeAtLastRise) / timeBetweenSubsequentRises;
+    Serial.print("Line angle: "); Serial.print(lineAngle); Serial.print("/t");
+}
 
 // PID
 PID pid(0.5, 0, 30, 1000);
@@ -150,8 +163,8 @@ int confidence() {
     float confY = constrain(sumY/(243-12), 0, 1);
 
     deconstructSpeed();
-    speedX = speedX * pow(confX, 1);
-    speedY = speedY * pow(confY, 1);
+    speedX = constrain(speedX, -SPEED * pow(confX, 1), SPEED * pow(confX, 1));
+    speedY = constrain(speedY, -SPEED * pow(confY, 1), SPEED * pow(confY, 1));
     constructSpeed();
 
     return 0;
@@ -327,6 +340,9 @@ void setupDevices() {
 
     // Pin for bottom plate
     pinMode(BOTTOM_PLATE_PIN, INPUT);
+    attachInterrupt(digitalPinToInterrupt(BOTTOM_PLATE_PIN), lineRise, RISING);
+    attachInterrupt(digitalPinToInterrupt(BOTTOM_PLATE_PIN), lineFall, FALLING);
+
     pinMode(LIGHT_GATE_PIN, INPUT);
     emptyLightGateThreshold = calibrateLightGate();
 }
@@ -340,7 +356,6 @@ void updateData() {
         lastMillis = millis();
     }
     botHeading  = imu.readAngle();                                   // from 0 to 360
-    isOnLine    = digitalRead(BOTTOM_PLATE_PIN);                     // 1 if on line, 0 if not on line
 }
 
 //// ** MAIN ** ////
