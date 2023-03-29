@@ -1,12 +1,13 @@
 #include <Arduino.h>
+#include <CommonUtils.h>
 #include <Definitions.h>
 #include <FastLED.h>
 #include <Temt.h>
 #include <Wire.h>
 
-#define TEMT_THRESHOLD  2000 // to be calibrated
+#define TEMT_THRESHOLD  1000 // to be calibrated
 #define DEBUG           false
-#define DEBUG_LOOP_TIME true
+#define DEBUG_LOOP_TIME false
 #define NUM_LEDS        10
 
 // PIN, X POSITION, Y POSITION
@@ -19,16 +20,19 @@
 unsigned long loopStartMicros;
 bool          isOnLine;
 CRGB          leds[NUM_LEDS];
+float      sumX, sumY, angle;
 
-Temt temts[10] = {
+#define TEMT_COUNT 8
+
+Temt temts[TEMT_COUNT] = {
     Temt(33, 0.4, 1),
     Temt(32, 1, 0.4),
-    Temt(4, 1, 0),
+    // Temt(4, 1, 0),
     Temt(2, 1, -0.4),
     Temt(15, 0.4, -1),
     Temt(13, -0.4, -1),
     Temt(14, -1, -0.4),
-    Temt(27, -1, 0),
+    // Temt(27, -1, 0),
     Temt(26, -1, 0.4),
     Temt(25, -0.4, 1),
 };
@@ -49,8 +53,11 @@ void loop() {
     loopStartMicros = micros(); // For debugging loop time
     isOnLine        = false;
 
+    sumX = 0;
+    sumY = 0;
+
     // Read the values from the sensors
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < TEMT_COUNT; i++) {
         if (DEBUG) {
             Serial.print(temts[i].read());
             Serial.print("\t");
@@ -58,19 +65,26 @@ void loop() {
 
         if (temts[i].read() > TEMT_THRESHOLD) {
             isOnLine = true;
-            break;
+            // break;
+            sumX += temts[i].X;
+            sumY += temts[i].Y;
         }
     }
 
-    if (isOnLine == true) {
-        digitalWrite(22, HIGH); // write SCL HIGH
-        if (DEBUG) {
-            Serial.print("LINE");
-            Serial.print('\t');
-        }
+    const int NUM_SEGMENTS = 8;
+    if (sumX != 0 || sumY != 0) {
+        angle = LIM_ANGLE(DEG(atan2f(-sumX, -sumY)));
+        angle = floor(angle / (360 / NUM_SEGMENTS)) + 1; // Convert to 1 to 8
     } else {
-        digitalWrite(22, LOW); // write SCL HIGH
+        angle = 0; // no line
     }
+
+    if (DEBUG) {
+        Serial.print(angle / (NUM_SEGMENTS + 1) * 255);
+        Serial.print("\t");
+    }
+    
+    analogWrite(22, angle / (NUM_SEGMENTS + 1) * 255);
 
     if (DEBUG_LOOP_TIME) {
         Serial.print((float) (micros() - loopStartMicros) / 1000);
