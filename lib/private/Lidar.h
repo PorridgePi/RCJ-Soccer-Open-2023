@@ -11,7 +11,7 @@ class Lidar {
         } // constructor
 
         int read() {
-            return readRaw() + _calibration;
+            return constrain(readRaw() + _calibration, 0, 255);
         }
 
         int readRaw() {
