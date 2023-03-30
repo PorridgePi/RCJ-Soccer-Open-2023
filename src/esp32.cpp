@@ -9,6 +9,7 @@
 #define DEBUG           false
 #define DEBUG_LOOP_TIME false
 #define NUM_LEDS        10
+#define USE_DIGITAL     true
 
 // PIN, X POSITION, Y POSITION
 //    25   33
@@ -84,7 +85,8 @@ void loop() {
         Serial.print("\t");
     }
     
-    analogWrite(22, angle / (NUM_SEGMENTS + 1) * 255);
+    if (USE_DIGITAL) digitalWrite(22, isOnLine);
+    else analogWrite(22, angle / (NUM_SEGMENTS + 1) * 255);
 
     if (DEBUG_LOOP_TIME) {
         Serial.print((float) (micros() - loopStartMicros) / 1000);
