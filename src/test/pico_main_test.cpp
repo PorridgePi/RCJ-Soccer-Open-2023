@@ -148,12 +148,39 @@ void constructSpeed() {
     moveAngle = LIM_ANGLE(DEG(atan2(speedX, speedY)));
 }
 
-// void stayWithinBounds() {
-//     const int borderDist = 12;
-//     const int borderTolerance = 3;
-//     if (x > (0 + (borderDist + borderTolerance))) {
-//     }
-// }
+void stayWithinBounds() {
+    const int borderDist = 12;
+    const int borderTolerance = 9;
+    deconstructSpeed();
+
+    Serial.print(moveAngle); Serial.print("\t");
+
+    float multiplierX;
+    int distanceX;
+    if (moveAngle >= 0 && moveAngle < 180) { // moving right
+        distanceX = (182 - borderDist - borderTolerance) - x;
+    } else if (moveAngle >= 180 && moveAngle < 360) { // moving left
+        distanceX = x - borderDist - borderTolerance;
+    }
+    Serial.print(distanceX); Serial.print("\t");
+    multiplierX = constrain(3 * sqrt((distanceX)/91), 0, 1);
+    speedX = constrain(speedX, -SPEED * multiplierX, SPEED * multiplierX);
+
+    float multiplierY;
+    int distanceY;
+    if (moveAngle >= 90 && moveAngle < 270) { // moving down
+        int maxY = max(borderDist, (3 / 80 * (x - 182 / 2)) ^ 4 + 243 - 38); // 38 is wall to goal border
+        distanceY = maxY - y;
+    } else if (moveAngle >= 270 || moveAngle < 90) { // moving up
+        int maxY = max(borderDist, - (3 / 80 * (x - 182 / 2)) ^ 4 + 38);
+        distanceY = y - maxY;
+    }
+    Serial.print(distanceY); Serial.print("\t");
+    multiplierY = constrain(3 * sqrt((distanceY)/121.5), 0, 1);
+    speedY = constrain(speedY, -SPEED * multiplierY, SPEED * multiplierY);
+
+    constructSpeed();
+}
 
 int confidence() {
     float sumX = leftDist + rightDist;
@@ -340,8 +367,8 @@ void setupDevices() {
 
     // Pin for bottom plate
     pinMode(BOTTOM_PLATE_PIN, INPUT);
-    attachInterrupt(digitalPinToInterrupt(BOTTOM_PLATE_PIN), lineRise, RISING);
-    attachInterrupt(digitalPinToInterrupt(BOTTOM_PLATE_PIN), lineFall, FALLING);
+    // attachInterrupt(digitalPinToInterrupt(BOTTOM_PLATE_PIN), lineRise, RISING);
+    // attachInterrupt(digitalPinToInterrupt(BOTTOM_PLATE_PIN), lineFall, FALLING);
 
     pinMode(LIGHT_GATE_PIN, INPUT);
     emptyLightGateThreshold = calibrateLightGate();
@@ -356,6 +383,7 @@ void updateData() {
         lastMillis = millis();
     }
     botHeading  = imu.readAngle();                                   // from 0 to 360
+    isOnLine    = digitalRead(BOTTOM_PLATE_PIN);
 }
 
 //// ** MAIN ** ////
@@ -408,8 +436,8 @@ void loop() {
     //// ** STRATEGY ** ////
     if (isBallCaptured()) {
         isAiming = true;
-        if (millis() - lastKickerMillis > 500) {
-            if (goalAngle < 10 || goalAngle > 350) {
+        if (millis() - lastKickerMillis > 1000) {
+            if (goalAngle != -1 && (goalAngle < 10 || goalAngle > 350)) {
                 kicker.kick();
                 lastKickerMillis = millis();
             }
@@ -432,9 +460,9 @@ void loop() {
     //     goalRotateAngle = 0;
     // }
 
-    if (ballAngle != -1) { // if ball present, rotate robot to face the goal
-        goalRotateAngle = (goalAngle < 180 ? goalAngle : goalAngle - 360);
-    }
+    // if (ballAngle != -1) { // if ball present, rotate robot to face the goal
+    //     goalRotateAngle = (goalAngle < 180 ? goalAngle : goalAngle - 360);
+    // }
 
     // moveAngle = ballTrack(); // -1 if no ball detected
     // moveAngle = ballAngle; // direct movement straight to ball
@@ -446,8 +474,9 @@ void loop() {
     if (moveAngle == -1) { // stop if moveAngle is -1
         speed = 0;
     }
-    
-    confidence();
+
+    stayWithinBounds();
+    // confidence();
 
     // Staying within bounds
     if (isOnLine == true) { // failsafe: if on line, move to the center
