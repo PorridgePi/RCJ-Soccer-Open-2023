@@ -6,8 +6,8 @@
 
 class Lidar {
     public:
-        Lidar(int addr, int calibration = 0) :
-            _addr(addr), _calibration(calibration) {
+        Lidar(TwoWire &wire, int addr, int calibration = 0) :
+            _addr(addr), _calibration(calibration), _wire(wire) {
         } // constructor
 
         int read() {
@@ -15,16 +15,16 @@ class Lidar {
         }
 
         int readRaw() {
-            Wire.beginTransmission(_addr); // start bit
-            Wire.write(0x00);              // tell tfluna which register to read from, this register is low dist
+            _wire.beginTransmission(_addr); // start bit
+            _wire.write(0x00);              // tell tfluna which register to read from, this register is low dist
 
             // unsigned int timeStart = millis();
-            Wire.endTransmission(); // end bit
+            _wire.endTransmission(); // end bit
             // Serial.print(millis()-timeStart);
             // Wire.endTransmission() and Wire.requestFrom() are timing out?
 
-            Wire.requestFrom(_addr, 1); // request 1 bit
-            int response = Wire.read(); // read the bit
+            _wire.requestFrom(_addr, 1); // request 1 bit
+            int response = _wire.read(); // read the bit
 
             // Serial.print("\t");
             // Serial.println(response);
@@ -32,30 +32,31 @@ class Lidar {
         }
 
         int getFPS() {
-            Wire.beginTransmission(_addr);
-            Wire.write(0x26); // this register is low FPS
-            Wire.endTransmission();
-            Wire.requestFrom(_addr, 1);
-            return Wire.read();
+            _wire.beginTransmission(_addr);
+            _wire.write(0x26); // this register is low FPS
+            _wire.endTransmission();
+            _wire.requestFrom(_addr, 1);
+            return _wire.read();
         }
 
         void setFPS(int fps) {
-            Wire.beginTransmission(_addr);
-            Wire.write(0x26);
-            Wire.write(fps);
-            Wire.endTransmission();
+            _wire.beginTransmission(_addr);
+            _wire.write(0x26);
+            _wire.write(fps);
+            _wire.endTransmission();
         }
 
         void setAddress(int newaddr) {
-            Wire.beginTransmission(_addr); // start bit
-            Wire.write(0x22);              // this register is the slave address
-            Wire.write(newaddr);           // write data, which is the new address
-            Wire.endTransmission();        // end bit
+            _wire.beginTransmission(_addr); // start bit
+            _wire.write(0x22);              // this register is the slave address
+            _wire.write(newaddr);           // write data, which is the new address
+            _wire.endTransmission();        // end bit
             _addr = newaddr;
         }
 
     private:
         int _addr, _calibration;
+        TwoWire &_wire;
 };
 
 #endif

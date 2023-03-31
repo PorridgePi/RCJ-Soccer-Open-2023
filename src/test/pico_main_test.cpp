@@ -83,10 +83,10 @@ float speed = SPEED;
 float speedX, speedY, moveAngle;
 
 // LiDAR
-Lidar lidarFront(0x12, -5); // front LiDAR
-Lidar lidarRight(0x13, +4); // right LiDAR
-Lidar lidarBack(0x11, +5);  // back LiDAR
-Lidar lidarLeft(0x10, +4);  // left LiDAR
+Lidar lidarFront(Wire, 0x12, -5); // front LiDAR
+Lidar lidarRight(Wire, 0x13, +4); // right LiDAR
+Lidar lidarBack(Wire, 0x11, +5);  // back LiDAR
+Lidar lidarLeft(Wire, 0x10, +4);  // left LiDAR
 #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
 volatile float frontDist, backDist, rightDist, leftDist; // volatile for multicore access
 #else
@@ -271,13 +271,13 @@ void categoriseBlock() {
     if (numBall > 0) {
         ballAngle    = getBallAngle();
         ballDistance = getBallDistance();
+        ballLastMillis = millis();
     } else { // no ball detected
         // if no ball detected for 1 second, reset ball angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
         if (millis() - ballLastMillis > 2000) {
             ballAngle    = -1;
             ballDistance = -1;
-            ballLastMillis = millis();
         }
     }
 
