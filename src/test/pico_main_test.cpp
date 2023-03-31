@@ -95,7 +95,7 @@ float frontDist, backDist, rightDist, leftDist; // distance to obstacles
 int x, y; // coordinate of robot relative to field
 
 // IMU
-IMU imu(0x1E); // IMU providing heading
+IMU imu(Wire1, 0x1E); // IMU providing heading
 #ifdef USE_MULTICORE
 volatile float botHeading; //  heading of robot (0 to 360 degrees), volatile for multicore access
 #else

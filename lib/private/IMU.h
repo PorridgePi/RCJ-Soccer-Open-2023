@@ -7,14 +7,14 @@
 
 class IMU {
     public:
-        IMU(int addr) :
-            _addr(addr){};
+        IMU(TwoWire &wire, int addr) :
+            _addr(addr), _wire(wire) {};
 
         void init() {
-            Wire.beginTransmission(_addr);
-            Wire.write(0x02);
-            Wire.write(0x00);
-            Wire.endTransmission();
+            _wire.beginTransmission(_addr);
+            _wire.write(0x02);
+            _wire.write(0x00);
+            _wire.endTransmission();
             _initialised = true;
         };
 
@@ -54,12 +54,13 @@ class IMU {
         float     _zeroError;
         bool      _initialised = false;
         int       _mag[2];
+        TwoWire   &_wire;
 
         void _update() {
-            if (Wire.available() < 6) {
-                Wire.beginTransmission(_addr);
-                Wire.write(0x03); // select register 3, X MSB register
-                byte error = Wire.endTransmission();
+            if (_wire.available() < 6) {
+                _wire.beginTransmission(_addr);
+                _wire.write(0x03); // select register 3, X MSB register
+                byte error = _wire.endTransmission();
                 if (error) {
                     Serial.println("Error occured when writing");
                     if (error == 5) Serial.println("It was a timeout");
@@ -67,11 +68,11 @@ class IMU {
             }
 
 
-            Wire.requestFrom(_addr, 6);
-            if (Wire.available() >= 6) {
+            _wire.requestFrom(_addr, 6);
+            if (_wire.available() >= 6) {
                 int buff[6];
                 for (unsigned int i = 0; i < 6; i++) {
-                    buff[i] = Wire.read();
+                    buff[i] = _wire.read();
                 }
 
                 int j[2];
