@@ -25,7 +25,7 @@ Drive driveBase(motorFR, motorBR, motorBL, motorFL);
 // #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
 #define BALL_FUNCTION_THRESHOLD 0.0004f
 
-Camera Pixy(PIXY_RX, PIXY_TX, 139, 104);
+Camera Pixy(PIN_CAM_RX, PIN_CAM_TX_MISO, 139, 104);
 
 int   frontDist, backDist, rightDist, leftDist;
 Lidar lidarFront(0x12, -5);
@@ -50,13 +50,13 @@ int calibrateLightGate() {
     delay(500);
     int sum = 0;
     for (int i = 0; i < 100; i++) {
-        sum += analogRead(LIGHT_GATE_PIN);
+        sum += analogRead(PIN_BALL_CAP_ANALOG);
     }
     return sum / 100;
 }
 
 bool isBallInGate() {
-    if (analogRead(LIGHT_GATE_PIN) < emptyLightGateThreshold - LIGHT_GATE_DIFFERENCE_THRESHOLD) {
+    if (analogRead(PIN_BALL_CAP_ANALOG) < emptyLightGateThreshold - LIGHT_GATE_DIFFERENCE_THRESHOLD) {
         return true;
     } else {
         return false;
@@ -64,7 +64,7 @@ bool isBallInGate() {
 }
 
 bool isOnLine() {
-    return digitalRead(BOTTOM_PLATE_PIN);
+    return digitalRead(PIN_BOTPLATE_D1);
 }
 
 float moveAngle = 0;
@@ -117,8 +117,8 @@ void setup() {
     pinMode(PIN_LED, OUTPUT);
     digitalWrite(PIN_LED, HIGH); // turn on LED to indicate start of setup
 
-    pinMode(BOTTOM_PLATE_PIN, INPUT);
-    pinMode(LIGHT_GATE_PIN, INPUT);
+    pinMode(PIN_BOTPLATE_D1, INPUT);
+    pinMode(PIN_BALL_CAP_ANALOG, INPUT);
 
     Serial.begin(9600);
     Pixy.begin(19200);
@@ -163,7 +163,7 @@ void loop() {
     if (DEBUG_PRINT_LIGHT_GATE) {
         Serial.print(emptyLightGateThreshold); Serial.print("\t");
         Serial.print(isBallInGate()); Serial.print("\t");
-        Serial.print(analogRead(LIGHT_GATE_PIN)); Serial.print("\t");
+        Serial.print(analogRead(PIN_BALL_CAP_ANALOG)); Serial.print("\t");
     }
     if (DEBUG_PRINT_PIXY) {
         Serial.print(ballDistance); Serial.print("\t");

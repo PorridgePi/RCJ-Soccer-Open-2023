@@ -41,7 +41,7 @@ Block        yellowBlocks[10]; // array of yellow goal blocks
 Block        blueBlocks[10];   // array of blue goal blocks
 #else
 #include <Camera.h> // include personal Pixy2 library
-Camera Pixy(PIXY_RX, PIXY_TX, pixyXC, pixyYC); // Camera object from personal Pixy2 library
+Camera Pixy(PIN_CAM_RX, PIN_CAM_TX_MISO, pixyXC, pixyYC); // Camera object from personal Pixy2 library
 #endif
 
 // Ball
@@ -73,6 +73,7 @@ void lineRise() {
 PID pid(0.5, 0, 30, 1000);
 
 // Movement
+// TODO: UPDATE MOTOR PINS
 Motor motorFR(21, 20);                    // top left JST, top right motor
 Motor motorBR(26, 22);                    // bottom left JST, bottom right motor
 Motor motorBL(3, 7);                      // bottom right JST, bottom left motor
@@ -104,7 +105,7 @@ float rotateAngle; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
 
 // Kicker
-Kicker kicker(2);
+Kicker kicker(PIN_RELAY);
 
 //// ** FUNCTIONS ** ////
 // continuous async blink LED to indicate program is running and Pico has not hang
@@ -199,7 +200,7 @@ int confidence() {
 
 // true (1) if ball is captured, false (0) if not
 bool isBallCaptured() {
-    if (analogRead(LIGHT_GATE_PIN) < emptyLightGateThreshold - LIGHT_GATE_DIFFERENCE_THRESHOLD) {
+    if (analogRead(PIN_BALL_CAP_ANALOG) < emptyLightGateThreshold - LIGHT_GATE_DIFFERENCE_THRESHOLD) {
         return true;
     } else {
         return false;
@@ -211,7 +212,7 @@ int calibrateLightGate() {
     delay(500);
     int sum = 0;
     for (int i = 0; i < 100; i++) {
-        sum += analogRead(LIGHT_GATE_PIN);
+        sum += analogRead(PIN_BALL_CAP_ANALOG);
     }
     return sum / 100;
 }
@@ -355,22 +356,26 @@ void updatePosition() {
 // setup devices (LiDARs, IMU, bottom plate) - called in either core 0 or 1
 void setupDevices() {
     // I2C for LiDAR
-    Wire.setSCL(13);
-    Wire.setSDA(12);
+    Wire.setSCL(PIN_WIRE0_LUNA_SCL);
+    Wire.setSDA(PIN_WIRE0_LUNA_SDA);
     Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
 
     // I2C for IMU
+    Wire1.setSCL(PIN_WIRE1_SCL);
+    Wire1.setSDA(PIN_WIRE1_SDA);
+    Wire1.setTimeout(1); // set timeout to 1 ms
+    Wire1.begin();
     imu.setCalibration(159, 32, 516, 530, -53);
     imu.init();
     imu.tare(); // set current angle as heading 0
 
     // Pin for bottom plate
-    pinMode(BOTTOM_PLATE_PIN, INPUT);
-    // attachInterrupt(digitalPinToInterrupt(BOTTOM_PLATE_PIN), lineRise, RISING);
-    // attachInterrupt(digitalPinToInterrupt(BOTTOM_PLATE_PIN), lineFall, FALLING);
+    pinMode(PIN_BOTPLATE_D1, INPUT);
+    // attachInterrupt(digitalPinToInterrupt(PIN_BOTPLATE_D1), lineRise, RISING);
+    // attachInterrupt(digitalPinToInterrupt(PIN_BOTPLATE_D1), lineFall, FALLING);
 
-    pinMode(LIGHT_GATE_PIN, INPUT);
+    pinMode(PIN_BALL_CAP_ANALOG, INPUT);
     emptyLightGateThreshold = calibrateLightGate();
 }
 
@@ -383,7 +388,7 @@ void updateData() {
         lastMillis = millis();
     }
     botHeading  = imu.readAngle();                                   // from 0 to 360
-    isOnLine    = digitalRead(BOTTOM_PLATE_PIN);
+    isOnLine    = digitalRead(PIN_BOTPLATE_D1);
 }
 
 //// ** MAIN ** ////
