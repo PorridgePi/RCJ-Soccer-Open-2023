@@ -277,6 +277,7 @@ void categoriseBlock() {
         if (millis() - ballLastMillis > 2000) {
             ballAngle    = -1;
             ballDistance = -1;
+            ballLastMillis = millis();
         }
     }
 
@@ -289,6 +290,7 @@ void categoriseBlock() {
         // time is to prevent false reset (i.e. due to lag or blind spot)
         if (millis() - goalLastMillis > 1000) {
             goalAngle = -1;
+            goalLastMillis = millis();
         }
     }
 }
