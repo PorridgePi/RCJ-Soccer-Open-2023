@@ -21,11 +21,11 @@
 #include "TPixy2.h"
 #include "Arduino.h"
 #include <SoftwareSerial.h>
+#include <Definitions.h>
 
-#define PIXY_TX 8
-#define PIXY_RX 15
-
-SoftwareSerial PixySerial(PIXY_RX, PIXY_TX);
+// #define PIXY_TX 8
+// #define PIXY_RX 15
+// SoftwareSerial PixySerial(PIXY_RX, PIXY_TX);
 
 #define PIXY_UART_BAUDRATE        19200
 
@@ -34,10 +34,12 @@ class Link2UART
 public:
   int8_t open(uint32_t arg)
   {
+  Serial1.setTX(PIN_CAM_TX_MISO);
+  Serial1.setRX(PIN_CAM_RX);
 	if (arg==PIXY_DEFAULT_ARGVAL)
-      PixySerial.begin(PIXY_UART_BAUDRATE);
+      Serial1.begin(PIXY_UART_BAUDRATE);
     else
-      PixySerial.begin(arg);      
+      Serial1.begin(arg);      
     return 0;
   }
 	
@@ -59,7 +61,7 @@ public:
       {
         if (j==200)
           return -1;
-	    c = PixySerial.read();
+	    c = Serial1.read();
         if (c>=0)
           break;
         delayMicroseconds(10);
@@ -74,7 +76,7 @@ public:
     
   int16_t send(uint8_t *buf, uint8_t len)
   {
-    PixySerial.write(buf, len);
+    Serial1.write(buf, len);
     return len;
   }
   	
