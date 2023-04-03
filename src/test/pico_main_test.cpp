@@ -26,6 +26,8 @@
 // #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
 #define BALL_FUNCTION_THRESHOLD 0.0004f // constant for distance to cm conversion
 
+#define SPEED_TO_TURN_RATE_RATIO 1
+
 #define SPEED     0.3 // speed of robot (0.0 to 1.0)
 
 //// ** DECLARATIONS ** ////
@@ -54,10 +56,14 @@ float goalAngle;
 
 // Bottom Plate
 bool isOnLine; // true (1) if robot is on line (i.e. any bottom plate TEMT6000 exceeds threshold), false (0) if not
+bool isBallInFront;
+bool isBallCaptured;
 
 size_t timeAtLastRise;
 size_t timeBetweenSubsequentRises;
 float lineAngle;
+
+long long t;
 
 void lineFall() {
     timeBetweenSubsequentRises = micros() - timeAtLastRise;
@@ -101,7 +107,7 @@ volatile float botHeading; //  heading of robot (0 to 360 degrees), volatile for
 #else
 float botHeading; // heading of robot (0 to 360 degrees)
 #endif
-float rotateAngle; // for compass correction (-180 to 180 degrees)
+float rotateCommand; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
 
 // Kicker
@@ -198,14 +204,14 @@ int confidence() {
     return 0;
 }
 
-// true (1) if ball is captured, false (0) if not
-bool isBallCaptured() {
-    if (analogRead(PIN_BALL_CAP_ANALOG) < emptyLightGateThreshold - LIGHT_GATE_DIFFERENCE_THRESHOLD) {
-        return true;
-    } else {
-        return false;
-    }
+// sets isBallCaptured to true (1) if ball is captured, false (0) if not
+void readBallCap() {
+    isBallCaptured = analogRead(PIN_BALL_CAP_ANALOG) < (emptyLightGateThreshold - LIGHT_GATE_DIFFERENCE_THRESHOLD);
 }
+
+// bool isBallInFront() {
+    
+// }
 
 
 int calibrateLightGate() {
@@ -268,10 +274,18 @@ void categoriseBlock() {
 
     // Update ball angle and distance
     static unsigned long ballLastMillis = millis(); // last time ball was detected
+    static unsigned long ballLastInFrontMillis = millis(); //last time ball was in front
+    if (millis() - ballLastInFrontMillis > 1000 && isBallInFront) {
+        isBallInFront = false;
+    }
     if (numBall > 0) {
         ballAngle    = getBallAngle();
         ballDistance = getBallDistance();
         ballLastMillis = millis();
+        if ((ballAngle < 13 || ballAngle > 347) && ballDistance < 200) {
+            isBallInFront = true;
+            ballLastInFrontMillis = millis();
+        }
     } else { // no ball detected
         // if no ball detected for 1 second, reset ball angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
@@ -309,12 +323,13 @@ float ballTrack() {
 
     float angle = 0;
 
-    if (ballAngle < 13 || ballAngle > 347) { // ball is in front (TODO: ball cap light gate integration?)
-        if (ballDistance < 200) { // ball is near
-            return -1; 
-        }
-        angle = 0; // if far, move forward
-    } else if (ballAngle >= 0 && ballAngle < 90) { // front right
+    // if (ballAngle < 13 || ballAngle > 347) { // ball is in front (TODO: ball cap light gate integration?)
+    //     if (ballDistance < 200) { // ball is near
+    //         return -1; 
+    //     }
+    //     angle = 0; // if far, move forward
+    // } else
+    if (ballAngle >= 0 && ballAngle < 90) { // front right
         angle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 1));
     } else if (ballAngle >= 90 && ballAngle < 180) {
         angle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
@@ -423,7 +438,8 @@ void setup1() {
 
 // core 0 loop
 void loop() {
-    unsigned long long now = micros(); // loop time
+    float dt = (micros() - t) / 1000;
+    t = micros(); // loop time
     speed = SPEED;
 
     //// ** DATA UPDATE & PROCESSING ** ////
@@ -437,26 +453,35 @@ void loop() {
     updateBallData();
     #endif
 
+    readBallCap();
+
     bool isAiming = false;
     static unsigned long lastKickerMillis = millis();
-
     //// ** STRATEGY ** ////
-    if (isBallCaptured()) {
-        isAiming = true;
-        if (millis() - lastKickerMillis > 1000) {
-            if (goalAngle != -1 && (goalAngle < 10 || goalAngle > 350)) {
-                kicker.kick();
-                lastKickerMillis = millis();
-            }
-        }
+    rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
+
+    if (ballAngle == -1) {
+        moveAngle = moveTo(91, 122, 2);
+        
     } else {
-        if (ballAngle == -1) { // no ball detected
-            moveAngle = moveTo(91, 122, 2); // move to center
-        } else { // ball detected
-            moveAngle = ballTrack(); // move perpendicular to ball
-            if (moveAngle == -1) { // if ball is in front of robot
-                isAiming = true;
+        if (isBallInFront) {
+            if (isBallCaptured) {
+                float rot = (LIM_ANGLE(goalAngle) <= 180 ? LIM_ANGLE(goalAngle) : LIM_ANGLE(goalAngle) - 360) / 540;
+                rotateCommand = rot; // ??f
+                speed = max(speed, rot * SPEED_TO_TURN_RATE_RATIO); 
+            } else {
+                speed = min(speed, 0.15);
+                moveAngle = 0;
             }
+            // isAiming = true;
+            // if (millis() - lastKickerMillis > 1000) {
+            //     if (goalAngle != -1 && (goalAngle < 10 || goalAngle > 350)) {
+            //         kicker.kick();
+            //         lastKickerMillis = millis();
+            //     }
+            // }
+        } else {
+            moveAngle = ballTrack();
         }
     }
 
@@ -490,10 +515,9 @@ void loop() {
         moveAngle = moveTo(91, 122, 2);
     }
 
-    rotateAngle = LIM_ANGLE(botHeading - goalRotateAngle) <= 180 ? LIM_ANGLE(botHeading - goalRotateAngle) : LIM_ANGLE(botHeading -  goalRotateAngle) - 360; // from -180 to 180
 
     //// ** MOVEMENT ** ////
-    driveBase.setDrive(speed, moveAngle, constrain(rotateAngle / 540, -1, 1));
+    driveBase.setDrive(speed, moveAngle, rotateCommand);
 
 
     //// ** DEBUG ** ////
@@ -510,7 +534,7 @@ void loop() {
     // Serial.print(y); Serial.print("\t");
 
     // Loop time
-    Serial.print((float)(micros()-now)/1000); Serial.print("\t");
+    Serial.print((float)(micros()-t)/1000); Serial.print("\t");
     Serial.println();
 
     blinkLED();
