@@ -2,7 +2,7 @@
 #include <IMU.h>
 #include <Wire.h>
 
-IMU imu(0x1E);
+IMU imu(Wire, 0x1E);
 
 #include <Drive.h>
 #define MAX_SPEED 0.5
