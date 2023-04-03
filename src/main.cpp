@@ -65,16 +65,6 @@ float lineAngle;
 
 long long t;
 
-void lineFall() {
-    timeBetweenSubsequentRises = micros() - timeAtLastRise;
-    timeAtLastRise = micros();
-}
-
-void lineRise() {
-    lineAngle = (micros() - timeAtLastRise) / timeBetweenSubsequentRises;
-    Serial.print("Line angle: "); Serial.print(lineAngle); Serial.print("/t");
-}
-
 // PID
 PID pid(0.5, 0, 30, 1000);
 
@@ -130,19 +120,29 @@ void blinkLED(int interval = 50) {
     }
 }
 
-#ifdef USE_OFFICIAL_PIXY_LIB
-// gets distance to ball (arbitrary units), returns -1 if no ball detected
-int getBallDistance() {
-    Block ballBlock = ballBlocks[0]; // get first ball block ONLY (Potential improvement?)
-    if (ballBlock.m_signature == SIGNATURE_BALL) {
-        int xDiff = ballBlock.m_x - pixyXC;
-        int yDiff = ballBlock.m_y - pixyYC;
+// Localisation
+// move to coordinates (x, y) with tolerance in cm
+int moveTo(int targetX, int targetY, int tolerance) {
+    float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
+    float dist        = hypot(targetX - x, targetY - y); // distance to target coordinates
 
-        // max distance = 5 * 84 = 420 since max change is around 84 pixels
-        return constrain(5 * hypot(xDiff, yDiff), 0, 3000);
-    } else {
-        return -1; // return -1 if no ball detected
+    if (dist > tolerance) { // not reached target, move
+        return LIM_ANGLE(targetAngle);
+    } else { // reached target, stop
+        return -1;
     }
+}
+
+// update robot coordinates using LiDAR
+void updatePosition() {
+    float angle = botHeading <= 180 ? botHeading : 360 - botHeading; // correct for robot rotation (0 to 180 degrees)
+    frontDist   = lidarFront.read() * cosf(RAD(angle));
+    backDist    = lidarBack.read() * cosf(RAD(angle));
+    leftDist    = lidarLeft.read() * cosf(RAD(angle));
+    rightDist   = lidarRight.read() * cosf(RAD(angle));
+
+    x = (leftDist + 182 - rightDist) / 2;
+    y = (frontDist + 243 - backDist) / 2;
 }
 
 void deconstructSpeed() {
@@ -204,15 +204,11 @@ int confidence() {
     return 0;
 }
 
+// Ball Capture Zone
 // sets isBallCaptured to true (1) if ball is captured, false (0) if not
 void readBallCap() {
     isBallCaptured = analogRead(PIN_BALL_CAP_ANALOG) < (emptyLightGateThreshold - LIGHT_GATE_DIFFERENCE_THRESHOLD);
 }
-
-// bool isBallInFront() {
-    
-// }
-
 
 int calibrateLightGate() {
     delay(500);
@@ -221,6 +217,22 @@ int calibrateLightGate() {
         sum += analogRead(PIN_BALL_CAP_ANALOG);
     }
     return sum / 100;
+}
+
+// Camera
+#ifdef USE_OFFICIAL_PIXY_LIB
+// gets distance to ball (arbitrary units), returns -1 if no ball detected
+int getBallDistance() {
+    Block ballBlock = ballBlocks[0]; // get first ball block ONLY (Potential improvement?)
+    if (ballBlock.m_signature == SIGNATURE_BALL) {
+        int xDiff = ballBlock.m_x - pixyXC;
+        int yDiff = ballBlock.m_y - pixyYC;
+
+        // max distance = 5 * 84 = 420 since max change is around 84 pixels
+        return constrain(5 * hypot(xDiff, yDiff), 0, 3000);
+    } else {
+        return -1; // return -1 if no ball detected
+    }
 }
 
 // gets angle of ball relative to robot (0 to 360 degrees), returns -1 if no ball detected
@@ -346,30 +358,6 @@ float ballTrack() {
     return LIM_ANGLE(angle);
 }
 
-// move to coordinates (x, y) with tolerance in cm
-int moveTo(int targetX, int targetY, int tolerance) {
-    float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
-    float dist        = hypot(targetX - x, targetY - y); // distance to target coordinates
-
-    if (dist > tolerance) { // not reached target, move
-        return LIM_ANGLE(targetAngle);
-    } else { // reached target, stop
-        return -1;
-    }
-}
-
-// update robot coordinates using LiDAR
-void updatePosition() {
-    float angle = botHeading <= 180 ? botHeading : 360 - botHeading; // correct for robot rotation (0 to 180 degrees)
-    frontDist   = lidarFront.read() * cosf(RAD(angle));
-    backDist    = lidarBack.read() * cosf(RAD(angle));
-    leftDist    = lidarLeft.read() * cosf(RAD(angle));
-    rightDist   = lidarRight.read() * cosf(RAD(angle));
-
-    x = (leftDist + 182 - rightDist) / 2;
-    y = (frontDist + 243 - backDist) / 2;
-}
-
 // setup devices (LiDARs, IMU, bottom plate) - called in either core 0 or 1
 void setupDevices() {
     // I2C for LiDAR
@@ -389,8 +377,6 @@ void setupDevices() {
 
     // Pin for bottom plate
     pinMode(PIN_BOTPLATE_D1, INPUT);
-    // attachInterrupt(digitalPinToInterrupt(PIN_BOTPLATE_D1), lineRise, RISING);
-    // attachInterrupt(digitalPinToInterrupt(PIN_BOTPLATE_D1), lineFall, FALLING);
 
     pinMode(PIN_BALL_CAP_ANALOG, INPUT);
     emptyLightGateThreshold = calibrateLightGate();
