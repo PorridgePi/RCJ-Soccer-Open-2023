@@ -391,6 +391,10 @@ void updateData() {
     }
     botHeading  = imu.readAngle();                                   // from 0 to 360
     isOnLine    = digitalRead(PIN_BOTPLATE_D1);
+
+    if (digitalRead(PIN_ORI_RESET) == HIGH) { // reset IMU if button pressed
+        imu.tare();
+    }
 }
 
 //// ** MAIN ** ////
