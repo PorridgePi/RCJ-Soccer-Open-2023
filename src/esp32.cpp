@@ -85,8 +85,13 @@ void loop() {
         Serial.print("\t");
     }
     
-    if (USE_DIGITAL) digitalWrite(22, isOnLine);
-    else analogWrite(22, angle / (NUM_SEGMENTS + 1) * 255);
+    if (USE_DIGITAL) {
+        digitalWrite(22, isOnLine); // Pico D1
+        digitalWrite(21, isOnLine); // Pico D2
+    } else {
+        analogWrite(22, angle / (NUM_SEGMENTS + 1) * 255);
+        analogWrite(21, angle / (NUM_SEGMENTS + 1) * 255);
+    }
 
     if (DEBUG_LOOP_TIME) {
         Serial.print((float) (micros() - loopStartMicros) / 1000);
