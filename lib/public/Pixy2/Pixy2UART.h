@@ -34,12 +34,12 @@ class Link2UART
 public:
   int8_t open(uint32_t arg)
   {
-  Serial1.setTX(PIN_CAM_TX_MISO);
-  Serial1.setRX(PIN_CAM_RX);
+  Serial2.setTX(PIN_CAM_TX_MISO);
+  Serial2.setRX(PIN_CAM_RX);
 	if (arg==PIXY_DEFAULT_ARGVAL)
-      Serial1.begin(PIXY_UART_BAUDRATE);
+      Serial2.begin(PIXY_UART_BAUDRATE);
     else
-      Serial1.begin(arg);      
+      Serial2.begin(arg);      
     return 0;
   }
 	
@@ -61,7 +61,7 @@ public:
       {
         if (j==200)
           return -1;
-	    c = Serial1.read();
+	    c = Serial2.read();
         if (c>=0)
           break;
         delayMicroseconds(10);
@@ -76,7 +76,7 @@ public:
     
   int16_t send(uint8_t *buf, uint8_t len)
   {
-    Serial1.write(buf, len);
+    Serial2.write(buf, len);
     return len;
   }
   	
