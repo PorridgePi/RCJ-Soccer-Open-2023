@@ -7,7 +7,8 @@ void setup() {
 
 void loop() {
     digitalWrite(PIN_LED, HIGH);
-    delay(200);
+    delay(50);
     digitalWrite(PIN_LED, LOW);
     delay(50);
+    Serial.println("Hello world!");
 }
