@@ -448,10 +448,9 @@ void loop() {
     //// ** STRATEGY ** ////
     rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
 
-    if (ballAngle == -1) {
+    if (ballAngle == -1) { // no ball detected, move to centre
         moveAngle = moveTo(91, 122, 2);
-        
-    } else {
+    } else { // ball detected
         if (isBallInFront) {
             if (isBallCaptured) {
                 float rot = (LIM_ANGLE(goalAngle) <= 180 ? LIM_ANGLE(goalAngle) : LIM_ANGLE(goalAngle) - 360) / 540;
@@ -489,8 +488,8 @@ void loop() {
     // moveAngle = moveTo(91, 122, 2); // -1 if reached target
 
     Serial.print(moveAngle); Serial.print("\t");
-    Serial.print(ballAngle); Serial.print("\t");
-    
+
+    //// ** LOCALISATION ** ////
     if (moveAngle == -1) { // stop if moveAngle is -1
         speed = 0;
     }
@@ -498,15 +497,13 @@ void loop() {
     stayWithinBounds();
     // confidence();
 
-    // Staying within bounds
+    // Staying within bounds (failsafe) using TEMTs
     if (isOnLine == true) { // failsafe: if on line, move to the center
         moveAngle = moveTo(91, 122, 2);
     }
 
-
     //// ** MOVEMENT ** ////
     driveBase.setDrive(speed, moveAngle, rotateCommand);
-
 
     //// ** DEBUG ** ////
     // Serial.print(goalAngle); Serial.print("\t");
