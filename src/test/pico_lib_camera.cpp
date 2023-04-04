@@ -5,7 +5,7 @@
 #define USE_MULTICORE true
 
 #define PIXY_TX 8
-#define PIXY_RX 15
+#define PIXY_RX 5
 Camera Pixy(PIXY_RX, PIXY_TX, 142, 118);
 
 void setup() {
