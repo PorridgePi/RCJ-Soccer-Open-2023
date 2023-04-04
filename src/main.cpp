@@ -403,13 +403,12 @@ void setup() {
     // UART
     Serial.begin(9600);
 
-#ifndef USE_OFFICIAL_PIXY_LIB
+    #ifndef USE_OFFICIAL_PIXY_LIB
     Pixy.begin(19200);
-#endif
-
-#if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
+    #endif
+    #if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
     setupDevices();
-#endif
+    #endif
 
     // LED
     pinMode(PIN_LED, OUTPUT);
