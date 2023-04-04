@@ -30,14 +30,14 @@
 #define PIN_CAM_MOSI 15
 
 // PWM
-#define PIN_TOP_A_LPWM 9
-#define PIN_TOP_A_RPWM 11
-#define PIN_TOP_B_LPWM 1
-#define PIN_TOP_B_RPWM 7
-#define PIN_BOT_A_LPWM 22
-#define PIN_BOT_A_RPWM 26
-#define PIN_BOT_B_LPWM 20
-#define PIN_BOT_B_RPWM 21
+#define PIN_TOP_A_LPWM 9    // Top Outer Pins       Top Left Motors
+#define PIN_TOP_A_RPWM 11   // Top Outer Pins       Top Left Motors
+#define PIN_TOP_B_LPWM 1    // Top Inner Pins       Bottom Left Motors
+#define PIN_TOP_B_RPWM 7    // Top Inner Pins       Bottom Left Motors
+#define PIN_BOT_A_LPWM 22   // Bottom Outer Pins    Bottom Right Motors
+#define PIN_BOT_A_RPWM 26   // Bottom Outer Pins    Bottom Right Motors
+#define PIN_BOT_B_LPWM 20   // Bottom Inner Pins    Top Right Motors
+#define PIN_BOT_B_RPWM 21   // Bottom Inner Pins    Top Right Motors
 
 // Analog
 #define PIN_CAM_ANALOG A1 // GP27
