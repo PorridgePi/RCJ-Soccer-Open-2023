@@ -2,7 +2,8 @@
 #include <CommonUtils.h>
 #include <Definitions.h>
 #include <Drive.h>
-#include <IMU.h>
+// #include <IMU.h>
+#include <MechaQMC5883.h>
 #include <Lidar.h>
 #include <PID.h>
 #include <Wire.h>
@@ -90,7 +91,8 @@ float frontDist, backDist, rightDist, leftDist; // distance to obstacles
 int x, y; // coordinate of robot relative to field
 
 // IMU
-IMU imu(Wire1, 0x1E); // IMU providing heading
+// IMU imu(Wire1, 0x1E); // IMU providing heading
+MechaQMC5883 imu(Wire1);
 #ifdef USE_MULTICORE
 volatile float botHeading; //  heading of robot (0 to 360 degrees), volatile for multicore access
 #else
@@ -370,7 +372,7 @@ void setupDevices() {
     Wire1.setSDA(PIN_WIRE1_SDA);
     Wire1.setTimeout(1); // set timeout to 1 ms
     Wire1.begin();
-    imu.setCalibration(159, 32, 516, 530, -53);
+    // imu.setCalibration(159, 32, 516, 530, -53);
     imu.init();
     imu.tare(); // set current angle as heading 0
 
