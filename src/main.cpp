@@ -137,13 +137,16 @@ int moveTo(int targetX, int targetY, int tolerance) {
 // update robot coordinates using LiDAR
 void updatePosition() {
     float angle = botHeading <= 180 ? botHeading : 360 - botHeading; // correct for robot rotation (0 to 180 degrees)
-    frontDist   = lidarFront.read() * cosf(RAD(angle));
-    backDist    = lidarBack.read() * cosf(RAD(angle));
-    leftDist    = lidarLeft.read() * cosf(RAD(angle));
-    rightDist   = lidarRight.read() * cosf(RAD(angle));
+    if (angle > 30 || angle < -30) {
+        angle = 0;
+    }
+    frontDist   = constrain(lidarFront.read() * cosf(RAD(angle)), 0, 255);
+    backDist    = constrain(lidarBack.read() * cosf(RAD(angle)), 0, 255);
+    leftDist    = constrain(lidarLeft.read() * cosf(RAD(angle)), 0, 255);
+    rightDist   = constrain(lidarRight.read() * cosf(RAD(angle)), 0, 255);
 
-    x = (leftDist + 182 - rightDist) / 2;
-    y = (frontDist + 243 - backDist) / 2;
+    x = constrain((leftDist + 182 - rightDist) / 2, 0, 255);
+    y = constrain((frontDist + 243 - backDist) / 2, 0, 255);
 }
 
 void deconstructSpeed() {
@@ -161,16 +164,13 @@ void stayWithinBounds() {
     const int borderTolerance = 9;
     deconstructSpeed();
 
-    Serial.print(moveAngle); Serial.print("\t");
-
     float multiplierX;
     int distanceX;
     if (moveAngle >= 0 && moveAngle < 180) { // moving right
         distanceX = (182 - borderDist - borderTolerance) - x;
-    } else if (moveAngle >= 180 && moveAngle < 360) { // moving left
+    } else if (moveAngle >= 180 && moveAngle <= 360) { // moving left
         distanceX = x - borderDist - borderTolerance;
     }
-    Serial.print(distanceX); Serial.print("\t");
     multiplierX = constrain(3 * sqrt((distanceX)/91), 0, 1);
     speedX = constrain(speedX, -SPEED * multiplierX, SPEED * multiplierX);
 
@@ -183,11 +183,13 @@ void stayWithinBounds() {
         int maxY = max(borderDist, - (3 / 80 * (x - 182 / 2)) ^ 4 + 38);
         distanceY = y - maxY;
     }
-    Serial.print(distanceY); Serial.print("\t");
     multiplierY = constrain(3 * sqrt((distanceY)/121.5), 0, 1);
     speedY = constrain(speedY, -SPEED * multiplierY, SPEED * multiplierY);
 
     constructSpeed();
+
+    Serial.print("distX "); Serial.print(distanceX); Serial.print("\t");
+    Serial.print("distY "); Serial.print(distanceY); Serial.print("\t");
 }
 
 int confidence() {
@@ -342,14 +344,16 @@ float ballTrack() {
     //     }
     //     angle = 0; // if far, move forward
     // } else
+
+    // negative number with float power will return inf!
     if (ballAngle >= 0 && ballAngle < 90) { // front right
-        angle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 1));
+        angle = ballAngle + 90 * (1 - pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 1));
     } else if (ballAngle >= 90 && ballAngle < 180) {
-        angle = ballAngle + 90 * (1 - pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8));
+        angle = ballAngle + 90 * (1 - pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.8));
     } else if (ballAngle >= 180 && ballAngle < 270) {
-        angle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 0.8)));
+        angle = ballAngle - 90 * (1 - (pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.8)));
     } else if (ballAngle >= 270 && ballAngle < 360) { // front left
-        angle = ballAngle - 90 * (1 - (pow((float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / MAX_BALL_DIST_THRESHOLD, 1)));
+        angle = ballAngle - 90 * (1 - (pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 1)));
     }
 
     // Serial.print(ballDistInCm); Serial.print("\t");
@@ -366,6 +370,12 @@ void setupDevices() {
     Wire.setSDA(PIN_WIRE0_LUNA_SDA);
     Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
+
+    #define LIDAR_FPS 250
+    lidarFront.setFPS(LIDAR_FPS);
+    lidarBack.setFPS(LIDAR_FPS);
+    lidarLeft.setFPS(LIDAR_FPS);
+    lidarRight.setFPS(LIDAR_FPS);
 
     // I2C for IMU
     Wire1.setSCL(PIN_WIRE1_SCL);
@@ -489,8 +499,6 @@ void loop() {
     // moveAngle = ballAngle; // direct movement straight to ball
     // moveAngle = moveTo(91, 122, 2); // -1 if reached target
 
-    Serial.print(moveAngle); Serial.print("\t");
-
     //// ** LOCALISATION ** ////
     if (moveAngle == -1) { // stop if moveAngle is -1
         speed = 0;
@@ -512,13 +520,13 @@ void loop() {
     // Serial.print(isOnLine); Serial.print("\t");
     // Serial.print(ballAngle); Serial.print("\t");
     // Serial.print(ballDistance); Serial.print("\t");
-    // Serial.print(botHeading); Serial.print("\t");
-    // Serial.print(frontDist); Serial.print("\t");
-    // Serial.print(backDist); Serial.print("\t");
-    // Serial.print(leftDist); Serial.print("\t");
-    // Serial.print(rightDist); Serial.print("\t");
-    // Serial.print(x); Serial.print("\t");
-    // Serial.print(y); Serial.print("\t");
+    // Serial.print("heading "); Serial.print(botHeading); Serial.print("\t");
+    // Serial.print("frontD "); Serial.print(frontDist); Serial.print("\t");
+    // Serial.print("backD "); Serial.print(backDist); Serial.print("\t");
+    // Serial.print("leftD "); Serial.print(leftDist); Serial.print("\t");
+    // Serial.print("rightD "); Serial.print(rightDist); Serial.print("\t");
+    // Serial.print("x "); Serial.print(x); Serial.print("\t");
+    // Serial.print("y "); Serial.print(y); Serial.print("\t");
 
     // Loop time
     Serial.print((float)(micros()-t)/1000); Serial.print("\t");
