@@ -39,6 +39,49 @@ class Lidar {
             return _wire.read();
         }
 
+
+        void readLimit() {
+            _wire.beginTransmission(_addr);
+            _wire.write(0x30);
+            _wire.endTransmission();
+
+            _wire.requestFrom(_addr, 1);
+            Serial.print(_wire.read());
+            Serial.print('\t');
+
+            _wire.beginTransmission(_addr);
+            _wire.write(0x31);
+            _wire.endTransmission();
+
+            _wire.requestFrom(_addr, 1);
+            Serial.print(_wire.read());
+            Serial.print('\t');
+
+            Serial.println();
+        }
+
+        void setLimit(int low, int high) { // default: 40, 35
+            _wire.beginTransmission(_addr);
+            _wire.write(0x30);
+            _wire.write(low);
+            _wire.endTransmission();
+
+            // _wire.requestFrom(_addr, 1);
+            // Serial.print(_wire.read());
+            // Serial.print('\t');
+
+            _wire.beginTransmission(_addr);
+            _wire.write(0x31);
+            _wire.write(high);
+            _wire.endTransmission();
+
+            // _wire.requestFrom(_addr, 1);
+            // Serial.print(_wire.read());
+            // Serial.print('\t');
+            
+            // Serial.println();
+        }
+
         void setFPS(int fps) {
             _wire.beginTransmission(_addr);
             _wire.write(0x26);
