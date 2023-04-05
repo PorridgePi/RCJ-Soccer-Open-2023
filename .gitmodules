@@ -1,3 +1,6 @@
 [submodule "lib/public/fastled"]
 	path = lib/public/fastled
 	url = https://github.com/fastled/fastled/
+[submodule "lib/public/Mecha_QMC5883L"]
+	path = lib/public/Mecha_QMC5883L
+	url = https://github.com/PorridgePi/Mecha_QMC5883L
