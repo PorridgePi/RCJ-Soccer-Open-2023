@@ -2,12 +2,12 @@
 #include <IMU.h>
 #include <Wire.h>
 
-IMU imu(Wire, 0x1E);
+IMU imu(Wire1, 0x1E);
 
 void setup() {
-    Wire.setSCL(5);
-    Wire.setSDA(4);
-    Wire.begin();
+    Wire1.setSCL(3);
+    Wire1.setSDA(2);
+    Wire1.begin();
     Serial.begin(9600);
     imu.init();
     imu.tare();
