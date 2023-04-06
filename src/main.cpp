@@ -67,13 +67,13 @@ float lineAngle;
 long long t;
 
 // PID
-PID pid(0.5, 0, 30, 1000);
+PID pid(0.005, 0, 0.05, 1000);
 
 // Movement
 Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM);
-Motor motorBR(PIN_BOT_A_LPWM, PIN_BOT_A_RPWM);
-Motor motorBL(PIN_TOP_B_LPWM, PIN_TOP_B_RPWM);
-Motor motorFL(PIN_TOP_A_LPWM, PIN_TOP_A_RPWM);
+Motor motorBR(PIN_BOT_A_RPWM, PIN_BOT_A_LPWM);
+Motor motorBL(PIN_TOP_B_RPWM, PIN_TOP_B_LPWM);
+Motor motorFL(PIN_TOP_A_RPWM, PIN_TOP_A_LPWM);
 Drive driveBase(motorFR, motorBR, motorBL, motorFL); // drive base controlling all 4 motors
 float speed = SPEED;
 float speedX, speedY, moveAngle;
@@ -160,22 +160,22 @@ void constructSpeed() {
 }
 
 void stayWithinBounds() {
-    const int borderDist = 12;
-    const int borderTolerance = 9;
+    const int borderDist = 25;//12; //set to 25 for testing on ri field
+    const int borderTolerance = 16;
     deconstructSpeed();
 
-    float multiplierX;
-    int distanceX;
+    static float multiplierX;
+    static float distanceX;
     if (moveAngle >= 0 && moveAngle < 180) { // moving right
         distanceX = (182 - borderDist - borderTolerance) - x;
     } else if (moveAngle >= 180 && moveAngle <= 360) { // moving left
         distanceX = x - borderDist - borderTolerance;
     }
-    multiplierX = constrain(3 * sqrt((distanceX)/91), 0, 1);
+    multiplierX = constrain(2 * distanceX/91, 0, 1);
     speedX = constrain(speedX, -SPEED * multiplierX, SPEED * multiplierX);
 
-    float multiplierY;
-    int distanceY;
+    static float multiplierY;
+    static float distanceY;
     if (moveAngle >= 90 && moveAngle < 270) { // moving down
         int maxY = max(borderDist, (3 / 80 * (x - 182 / 2)) ^ 4 + 243 - 38); // 38 is wall to goal border
         distanceY = maxY - y;
@@ -183,13 +183,14 @@ void stayWithinBounds() {
         int maxY = max(borderDist, - (3 / 80 * (x - 182 / 2)) ^ 4 + 38);
         distanceY = y - maxY;
     }
-    multiplierY = constrain(3 * sqrt((distanceY)/121.5), 0, 1);
+    multiplierY = constrain(2 * distanceY/121.5, 0, 1);
     speedY = constrain(speedY, -SPEED * multiplierY, SPEED * multiplierY);
 
     constructSpeed();
-
     Serial.print("distX "); Serial.print(distanceX); Serial.print("\t");
     Serial.print("distY "); Serial.print(distanceY); Serial.print("\t");
+    Serial.print("multX "); Serial.print(multiplierX); Serial.print("\t");
+    Serial.print("multY "); Serial.print(multiplierY); Serial.print("\t");
 }
 
 int confidence() {
@@ -459,7 +460,7 @@ void loop() {
     static unsigned long lastKickerMillis = millis();
     //// ** STRATEGY ** ////
     rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
-
+    rotateCommand = constrain(abs(rotateCommand), 0.03, 1) * copysign(1, rotateCommand);
     if (ballAngle == -1) { // no ball detected, move to centre
         moveAngle = moveTo(91, 122, 2);
     } else { // ball detected
@@ -504,6 +505,9 @@ void loop() {
         speed = 0;
     }
 
+    speed = 1;
+    moveAngle = 180;
+
     stayWithinBounds();
     // confidence();
 
@@ -513,8 +517,8 @@ void loop() {
     }
 
     //// ** MOVEMENT ** ////
-    driveBase.setDrive(speed, moveAngle, rotateCommand);
-
+    //driveBase.setDrive(speed, moveAngle, rotateCommand); //Speed multiplied to accomodate for differences in speed with the wheels
+    driveBase.setDrive(speed, moveAngle, constrain(pid.compute(0, -(LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1));
     //// ** DEBUG ** ////
     // Serial.print(goalAngle); Serial.print("\t");
     // Serial.print(isOnLine); Serial.print("\t");

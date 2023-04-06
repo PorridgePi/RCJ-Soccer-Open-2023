@@ -5,7 +5,7 @@
 #define MAX_SPEED 0.5
 
 Motor motor1(PIN_BOT_A_LPWM, PIN_BOT_A_RPWM); // top left JST, top right motor
-Motor motor2(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM); // bottom left JST, bottom right motor
+Motor motor2(PIN_BOT_B_RPWM, PIN_BOT_B_LPWM); // bottom left JST, bottom right motor
 Motor motor3(PIN_TOP_A_LPWM, PIN_TOP_A_RPWM);   // bottom right JST, bottom left motor
 Motor motor4(PIN_TOP_B_LPWM, PIN_TOP_B_RPWM);  // top right JST, top left motor
 
