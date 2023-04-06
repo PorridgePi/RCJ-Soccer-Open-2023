@@ -67,7 +67,7 @@ float lineAngle;
 long long t;
 
 // PID
-PID pid(0.005, 0, 0.05, 1000);
+PID pid(0.005, 0, 0.1, 100);
 
 // Movement
 Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM);
@@ -517,7 +517,7 @@ void loop() {
     }
 
     //// ** MOVEMENT ** ////
-    //driveBase.setDrive(speed, moveAngle, rotateCommand); //Speed multiplied to accomodate for differences in speed with the wheels
+    // driveBase.setDrive(speed, moveAngle, rotateCommand); //Speed multiplied to accomodate for differences in speed with the wheels
     driveBase.setDrive(speed, moveAngle, constrain(pid.compute(0, -(LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1));
     //// ** DEBUG ** ////
     // Serial.print(goalAngle); Serial.print("\t");

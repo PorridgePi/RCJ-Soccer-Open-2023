@@ -28,6 +28,9 @@ class PID {
                     output += _kd * (error - _lastError) / dt;
                     _lastError = error;
                 };
+
+                output = constrain(output, -1, 1);
+
                 _lastOutput = output;
                 return output; // constrain(output, -1, 1)
 
@@ -40,6 +43,12 @@ class PID {
             _ki = ki;
             _kd = kd;
         };
+
+        void reset() {
+            _integral = 0;
+            _lastError = 0;
+            _lastOutput = 0;
+        }
 
     private:
         float         _kp;
