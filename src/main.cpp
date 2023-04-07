@@ -140,12 +140,20 @@ void updatePosition() {
     if (angle > 30 || angle < -30) {
         angle = 0;
     }
-    frontDist   = constrain(lidarFront.read() * cosf(RAD(angle)), 0, 255);
-    backDist    = constrain(lidarBack.read() * cosf(RAD(angle)), 0, 255);
     leftDist    = constrain(lidarLeft.read() * cosf(RAD(angle)), 0, 255);
     rightDist   = constrain(lidarRight.read() * cosf(RAD(angle)), 0, 255);
-
     x = constrain((leftDist + 182 - rightDist) / 2, 0, 255);
+    int yCorrection = 20; // ACTUAL FIELD TODO NOTE IMPORTANT
+
+    // yCorrection = 12 - 7.4;
+    if (x >= 61 && x <= 121) {
+        yCorrection = 20; // ACTUAL FIELD TODO NOTE IMPORTANT
+    } else {
+        yCorrection = 0; // ACTUAL FIELD TODO NOTE IMPORTANT
+    }
+
+    frontDist   = constrain(lidarFront.read() * cosf(RAD(angle)) + yCorrection, 0, 255);
+    backDist    = constrain(lidarBack.read() * cosf(RAD(angle)) + yCorrection, 0, 255);
     y = constrain((frontDist + 243 - backDist) / 2, 0, 255);
 }
 
@@ -171,41 +179,49 @@ void stayWithinBounds() {
     } else if (moveAngle >= 180 && moveAngle <= 360) { // moving left
         distanceX = x - borderDist - borderTolerance;
     }
-    multiplierX = constrain(2 * distanceX/91, 0, 1);
+    multiplierX = constrain(1.7 * distanceX / 91, 0, 1); // TODO IMPORTANT INCREASE 1.7 ON ACTUAL FIELD 
     speedX = constrain(speedX, -SPEED * multiplierX, SPEED * multiplierX);
 
     static float multiplierY;
     static float distanceY;
+    int maxY;
     if (moveAngle >= 90 && moveAngle < 270) { // moving down
-        int maxY = max(borderDist, (3 / 80 * (x - 182 / 2)) ^ 4 + 243 - 38); // 38 is wall to goal border
+        maxY = max(borderDist, powf((3.0f / 80.0f * (x - 91.0f)), 4) + 243 - (27 + borderDist + borderTolerance)); // 38 is wall to goal border
         distanceY = maxY - y;
     } else if (moveAngle >= 270 || moveAngle < 90) { // moving up
-        int maxY = max(borderDist, - (3 / 80 * (x - 182 / 2)) ^ 4 + 38);
+        maxY = max(borderDist, - powf((3.0f / 80.0f * (x - 91.0f)), 4) + (27 + borderDist + borderTolerance));
         distanceY = y - maxY;
     }
     multiplierY = constrain(2 * distanceY/121.5, 0, 1);
     speedY = constrain(speedY, -SPEED * multiplierY, SPEED * multiplierY);
 
     constructSpeed();
-    Serial.print("distX "); Serial.print(distanceX); Serial.print("\t");
-    Serial.print("distY "); Serial.print(distanceY); Serial.print("\t");
-    Serial.print("multX "); Serial.print(multiplierX); Serial.print("\t");
-    Serial.print("multY "); Serial.print(multiplierY); Serial.print("\t");
+
+    // Serial.print("maxY: "); Serial.print(maxY); Serial.print("\t");
+    // Serial.print(multiplierX); Serial.print("\t");
+    // Serial.print(multiplierY); Serial.print("\t");
+    // Serial.print("distX "); Serial.print(distanceX); Serial.print("\t");
+    // Serial.print("distY "); Serial.print(distanceY); Serial.print("\t");
+    // Serial.print("multX "); Serial.print(multiplierX); Serial.print("\t");
+    // Serial.print("multY "); Serial.print(multiplierY); Serial.print("\t");
 }
 
-int confidence() {
+void confidence() {
     float sumX = leftDist + rightDist;
     float sumY = frontDist + backDist;
 
-    float confX = constrain(sumX/(182+4), 0, 1);
-    float confY = constrain(sumY/(243-12), 0, 1);
+    float confX = constrain(powf(sumX / (182 + 2), 2), 0, 1);
+    float confY = constrain(powf(sumY / (243 - 12), 2), 0, 1);
 
     deconstructSpeed();
-    speedX = constrain(speedX, -SPEED * pow(confX, 1), SPEED * pow(confX, 1));
-    speedY = constrain(speedY, -SPEED * pow(confY, 1), SPEED * pow(confY, 1));
+    speedX = constrain(speedX, -SPEED * pow(confX, 10), SPEED * pow(confX, 10));
+    speedY = constrain(speedY, -SPEED * pow(confY, 10), SPEED * pow(confY, 10));
     constructSpeed();
 
-    return 0;
+    // Serial.print(sumX); Serial.print("\t");
+    // Serial.print(sumY); Serial.print("\t");
+    // Serial.print(confX); Serial.print("\t");
+    // Serial.print(confY); Serial.print("\t");
 }
 
 // Ball Capture Zone
@@ -305,7 +321,7 @@ void categoriseBlock() {
     } else { // no ball detected
         // if no ball detected for 1 second, reset ball angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
-        if (millis() - ballLastMillis > 2000) {
+        if (millis() - ballLastMillis > 500) {
             ballAngle    = -1;
             ballDistance = -1;
         }
@@ -369,6 +385,7 @@ void setupDevices() {
     // I2C for LiDAR
     Wire.setSCL(PIN_WIRE0_LUNA_SCL);
     Wire.setSDA(PIN_WIRE0_LUNA_SDA);
+    Wire.setClock(400000);
     Wire.setTimeout(1); // set timeout to 1 ms
     Wire.begin();
 
@@ -398,7 +415,7 @@ void setupDevices() {
 void updateData() {
     // Update LiDARs not as frequently, using millis() to prevent lag
     static unsigned long lastMillis = 0;       // last time LiDARs were updated
-    if (millis() - lastMillis >= 1000 / 250) { // 250 Hz
+    if (millis() - lastMillis >= 1000 / 300) { // 300 Hz
         updatePosition();
         lastMillis = millis();
     }
@@ -485,6 +502,9 @@ void loop() {
         }
     }
 
+    Serial.print(isBallInFront); Serial.print("\t");
+    Serial.print("moveA: "); Serial.print(moveAngle); Serial.print("\t");
+
     // if (isAiming == true) {
     //     moveAngle = goalAngle;
     //     goalRotateAngle = (goalAngle < 180 ? goalAngle : goalAngle - 360);
@@ -505,32 +525,34 @@ void loop() {
         speed = 0;
     }
 
-    speed = 1;
-    moveAngle = 180;
-
     stayWithinBounds();
-    // confidence();
+    confidence();
+
+    Serial.print("moveA: "); Serial.print(moveAngle); Serial.print("\t");
 
     // Staying within bounds (failsafe) using TEMTs
     if (isOnLine == true) { // failsafe: if on line, move to the center
         moveAngle = moveTo(91, 122, 2);
+        speed = 0.5;
     }
 
     //// ** MOVEMENT ** ////
     // driveBase.setDrive(speed, moveAngle, rotateCommand); //Speed multiplied to accomodate for differences in speed with the wheels
     driveBase.setDrive(speed, moveAngle, constrain(pid.compute(0, -(LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1));
+
     //// ** DEBUG ** ////
+    Serial.print("moveA: "); Serial.print(moveAngle); Serial.print("\t");
     // Serial.print(goalAngle); Serial.print("\t");
     // Serial.print(isOnLine); Serial.print("\t");
-    // Serial.print(ballAngle); Serial.print("\t");
-    // Serial.print(ballDistance); Serial.print("\t");
-    // Serial.print("heading "); Serial.print(botHeading); Serial.print("\t");
+    Serial.print(ballAngle); Serial.print("\t");
+    Serial.print(ballDistance); Serial.print("\t");
+    Serial.print("heading "); Serial.print(botHeading); Serial.print("\t");
     // Serial.print("frontD "); Serial.print(frontDist); Serial.print("\t");
     // Serial.print("backD "); Serial.print(backDist); Serial.print("\t");
     // Serial.print("leftD "); Serial.print(leftDist); Serial.print("\t");
     // Serial.print("rightD "); Serial.print(rightDist); Serial.print("\t");
-    // Serial.print("x "); Serial.print(x); Serial.print("\t");
-    // Serial.print("y "); Serial.print(y); Serial.print("\t");
+    Serial.print("x "); Serial.print(x); Serial.print("\t");
+    Serial.print("y "); Serial.print(y); Serial.print("\t");
 
     // Loop time
     Serial.print((float)(micros()-t)/1000); Serial.print("\t");
