@@ -5,7 +5,7 @@
 #include <Temt.h>
 #include <Wire.h>
 
-#define TEMT_THRESHOLD  1000 // to be calibrated
+#define TEMT_THRESHOLD  800 // to be calibrated
 #define DEBUG           false
 #define DEBUG_LOOP_TIME false
 #define NUM_LEDS        10
@@ -51,6 +51,7 @@ void setup() {
 }
 
 void loop() {
+    static unsigned long lastOnLine = millis();
     loopStartMicros = micros(); // For debugging loop time
     isOnLine        = false;
 
@@ -81,13 +82,25 @@ void loop() {
     }
 
     if (DEBUG) {
+        Serial.print(isOnLine); Serial.print("\t");
         Serial.print(angle / (NUM_SEGMENTS + 1) * 255);
         Serial.print("\t");
     }
     
     if (USE_DIGITAL) {
-        digitalWrite(22, isOnLine); // Pico D1
-        digitalWrite(21, isOnLine); // Pico D2
+        if (isOnLine) {
+            lastOnLine = millis();
+            digitalWrite(22, isOnLine); // Pico D1
+            digitalWrite(21, isOnLine); // Pico D2
+            if (DEBUG) Serial.print("1");
+        } else if ((millis() - lastOnLine) < 100) {
+            digitalWrite(22, isOnLine); // Pico D1
+            digitalWrite(21, isOnLine); // Pico D2
+            if (DEBUG) Serial.print("1-");
+        } else {
+            if (DEBUG) Serial.print("0");
+        }
+
     } else {
         analogWrite(22, angle / (NUM_SEGMENTS + 1) * 255);
         analogWrite(21, angle / (NUM_SEGMENTS + 1) * 255);
