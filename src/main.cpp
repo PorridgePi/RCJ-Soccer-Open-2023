@@ -102,7 +102,7 @@ float rotateCommand; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
 
 // Kicker
-Kicker kicker(PIN_RELAY);
+// Kicker kicker(PIN_RELAY);
 
 //// ** FUNCTIONS ** ////
 // continuous async blink LED to indicate program is running and Pico has not hang
@@ -525,16 +525,16 @@ void loop() {
         speed = 0;
     }
 
-    stayWithinBounds();
-    confidence();
+    // stayWithinBounds();
+    // confidence();
 
     Serial.print("moveA: "); Serial.print(moveAngle); Serial.print("\t");
 
     // Staying within bounds (failsafe) using TEMTs
-    if (isOnLine == true) { // failsafe: if on line, move to the center
-        moveAngle = moveTo(91, 122, 2);
-        speed = 0.5;
-    }
+    // if (isOnLine == true) { // failsafe: if on line, move to the center
+    //     moveAngle = moveTo(91, 122, 2);
+    //     speed = 0.5;
+    // }
 
     //// ** MOVEMENT ** ////
     // driveBase.setDrive(speed, moveAngle, rotateCommand); //Speed multiplied to accomodate for differences in speed with the wheels
