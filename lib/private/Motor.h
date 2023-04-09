@@ -14,11 +14,11 @@ class Motor {
         void setSpeed(float speed) {
             _speed = constrain(speed, -1, 1);
             if (_speed >= 0) {
-                analogWrite(_pin0, _speed * 255);
-                analogWrite(_pin1, 0);
+                analogWrite(_pin0, 255);
+                analogWrite(_pin1, 255 - abs(_speed) * 255);
             } else {
-                analogWrite(_pin0, 0);
-                analogWrite(_pin1, -_speed * 255);
+                analogWrite(_pin0, 255 - (abs(_speed) * 255));
+                analogWrite(_pin1, 255);
             }
         }
 
