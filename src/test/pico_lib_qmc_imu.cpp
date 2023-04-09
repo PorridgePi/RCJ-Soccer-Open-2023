@@ -2,7 +2,7 @@
 #include <MechaQMC5883.h>
 #include <Wire.h>
 
-MechaQMC5883  qmc(Wire1);
+MechaQMC5883  qmc(Wire1, 0, 0, 0, 0);
 unsigned long t     = 0;
 float         angle = -1;
 
