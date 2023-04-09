@@ -93,7 +93,7 @@ void loop() {
             digitalWrite(22, isOnLine); // Pico D1
             digitalWrite(21, isOnLine); // Pico D2
             if (DEBUG) Serial.print("1");
-        } else if ((millis() - lastOnLine) < 100) {
+        } else if ((millis() - lastOnLine) < 300) {
             digitalWrite(22, isOnLine); // Pico D1
             digitalWrite(21, isOnLine); // Pico D2
             if (DEBUG) Serial.print("1-");
