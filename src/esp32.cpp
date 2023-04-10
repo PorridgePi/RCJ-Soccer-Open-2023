@@ -21,21 +21,22 @@
 unsigned long loopStartMicros;
 bool          isOnLine;
 CRGB          leds[NUM_LEDS];
-float      sumX, sumY, angle;
+float         sumX, sumY, angle;
 
-#define TEMT_COUNT 8
+#define TEMT_COUNT 10
+#define TEMT_DIFF  70
 
 Temt temts[TEMT_COUNT] = {
-    Temt(33, 0.4, 1),
-    Temt(32, 1, 0.4),
-    // Temt(4, 1, 0),
-    Temt(2, 1, -0.4),
-    Temt(15, 0.4, -1),
-    Temt(13, -0.4, -1),
-    Temt(14, -1, -0.4),
-    // Temt(27, -1, 0),
-    Temt(26, -1, 0.4),
-    Temt(25, -0.4, 1),
+    Temt(33, 0.4, 1, TEMT_DIFF + 50),
+    Temt(32, 1, 0.4, TEMT_DIFF + 50),
+    Temt(4, 1, 0, TEMT_DIFF),
+    Temt(2, 1, -0.4, TEMT_DIFF),
+    Temt(15, 0.4, -1, TEMT_DIFF),
+    Temt(13, -0.4, -1, TEMT_DIFF),
+    Temt(14, -1, -0.4, TEMT_DIFF),
+    Temt(27, -1, 0, TEMT_DIFF),
+    Temt(26, -1, 0.4, TEMT_DIFF),
+    Temt(25, -0.4, 1, TEMT_DIFF)
 };
 
 void setup() {
@@ -48,12 +49,26 @@ void setup() {
     FastLED.showColor(CRGB::Black); // Turn off the LED temporarily to blink
     delay(250);
     FastLED.showColor(CRGB::White); // White to indicate ready
+
+    delay(200);
+    int temtSum[TEMT_COUNT];
+    for (int i = 0; i < TEMT_COUNT; i++) {
+        temtSum[i] = 0;
+    }
+    for (int j = 0; j < 1000; j++) {
+        for (int i = 0; i < TEMT_COUNT; i++) {
+            temtSum[i] += temts[i].read();
+        }
+    }
+    for (int i = 0; i < TEMT_COUNT; i++) {
+        temts[i].setThreshold(temtSum[i] / 1000);
+    }
 }
 
 void loop() {
     static unsigned long lastOnLine = millis();
-    loopStartMicros = micros(); // For debugging loop time
-    isOnLine        = false;
+    loopStartMicros                 = micros(); // For debugging loop time
+    isOnLine                        = false;
 
     sumX = 0;
     sumY = 0;
@@ -61,15 +76,15 @@ void loop() {
     // Read the values from the sensors
     for (int i = 0; i < TEMT_COUNT; i++) {
         if (DEBUG) {
-            Serial.print(temts[i].read());
+            Serial.print(temts[i].isOnLine());
             Serial.print("\t");
         }
 
-        if (temts[i].read() > TEMT_THRESHOLD) {
+        if (temts[i].isOnLine()) {
             isOnLine = true;
             // break;
-            sumX += temts[i].X;
-            sumY += temts[i].Y;
+            sumX += temts[i].x;
+            sumY += temts[i].y;
         }
     }
 
@@ -82,11 +97,12 @@ void loop() {
     }
 
     if (DEBUG) {
-        Serial.print(isOnLine); Serial.print("\t");
+        Serial.print(isOnLine); 
+        Serial.print("\t");
         Serial.print(angle / (NUM_SEGMENTS + 1) * 255);
         Serial.print("\t");
     }
-    
+
     if (USE_DIGITAL) {
         if (isOnLine) {
             lastOnLine = millis();
