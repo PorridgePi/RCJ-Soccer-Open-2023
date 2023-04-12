@@ -1,11 +1,21 @@
 // Adapted from https://playground.arduino.cc/Main/I2cScanner/
 
 #include <Arduino.h>
+#include <Definitions.h>
 #include <Wire.h>
 
+TwoWire &_wire = Wire1;
+
 void setup() {
-    Wire1.setSCL(3);
-    Wire1.setSDA(2);
+    Wire.setSCL(PIN_WIRE0_LUNA_SCL);
+    Wire.setSDA(PIN_WIRE0_LUNA_SDA);
+    Wire.setClock(400000);
+    Wire.setTimeout(1); // set timeout to 1 ms
+    Wire.begin();
+
+    Wire1.setSCL(PIN_WIRE1_SCL);
+    Wire1.setSDA(PIN_WIRE1_SDA);
+    Wire1.setTimeout(1); // set timeout to 1 ms
     Wire1.begin();
 
     Serial.begin(9600);
@@ -24,8 +34,8 @@ void loop() {
         // The i2c_scanner uses the return value of
         // the Write.endTransmisstion to see if
         // a device did acknowledge to the address.
-        Wire1.beginTransmission(address);
-        error = Wire1.endTransmission();
+        _wire.beginTransmission(address);
+        error = _wire.endTransmission();
 
         if (error == 0) {
             Serial.print("I2C device found at address 0x");
