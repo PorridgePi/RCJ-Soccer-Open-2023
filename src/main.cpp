@@ -2,7 +2,7 @@
 #include <CommonUtils.h>
 #include <Definitions.h>
 #include <Drive.h>
-// #include <IMU.h>
+#include <IMU.h>
 #include <MechaQMC5883.h>
 #include <Lidar.h>
 #include <PID.h>
@@ -79,7 +79,7 @@ float lineAngle;
 long long t;
 
 // PID
-// PID pid(0.0075, 0, 0, 5000);
+// PID pid(0.01, 0, 0.04, 2000);
 
 // Movement
 #ifndef IS_SECOND_BOT // original bot
@@ -118,7 +118,12 @@ int x, y; // coordinate of robot relative to field
 
 // IMU
 // IMU imu(Wire1, 0x1E); // IMU providing heading
+#ifdef IS_SECOND_BOT
 MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
+#else
+IMU imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
+#endif
+
 #ifdef USE_MULTICORE
 volatile float botHeading; //  heading of robot (0 to 360 degrees), volatile for multicore access
 #else
@@ -573,7 +578,7 @@ void loop() {
     updateBallData();
     #endif
 
-    readBallCap();
+    //readBallCap();
 
     bool isAiming = false;
     static unsigned long lastKickerMillis = millis();
@@ -584,44 +589,42 @@ void loop() {
     DPRINT(goalDistance);
     //rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
     //rotateCommand = constrain(abs(rotateCommand), 0.03, 1) * copysign(1, rotateCommand);
-    // rotateCommand = constrain(pid.compute(0, -(LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1);
+    //rotateCommand = constrain(pid.compute(0, -ANGLE_360_TO_180(botHeading)), -1, 1);
     rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1);
 
     readBallCap();
     if (ballAngle == -1) { // no ball detected, move to centre
         moveTo(91, 122, 3);
     } else { // ball detected
-            static unsigned long lastAimMillis = millis();
-
+        static unsigned long lastAimMillis = millis();
         if (isBallInFront || isBallCaptured) { // ball in front
 
             if (ballDistance > MIN_BALL_DIST_THRESHOLD + 20 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
                 float distanceScale = constrain(powf(max(0, (float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / (float) (MAX_BALL_DIST_THRESHOLD - MIN_BALL_DIST_THRESHOLD)), 0.8f), 0, 1);
-                float speedConstrain = constrain(SPEED * distanceScale, max(0.2, SPEED / 3), SPEED);
+                float speedConstrain = constrain(SPEED * distanceScale, 0.15, SPEED);
                 speed = constrain(speed, -speedConstrain, speedConstrain);
                 moveAngle = 0;
                 prevMoveAngle = 0;
                 prevSpeed = 0.1;
-            } else { // ball close enough, aim ISSUE
-                lastAimMillis = millis();
-                // moveAngle = constrain(prevMoveAngle += goalAngle * dt / 2000, 0, goalAngle);
-                // prevMoveAngle = moveAngle;
-                // DPRINT(prevMoveAngle);
-                
-                speed = constrain((prevSpeed += dt / 5000), 0, SPEED);
+            // } else { // ball close enough, aim ISSUE
+            //     lastAimMillis = millis();
+            //     // moveAngle = constrain(prevMoveAngle += goalAngle * dt / 2000, 0, goalAngle);
+            //     // prevMoveAngle = moveAngle;
+            //     // DPRINT(prevMoveAngle); 
+            //     speed = constrain((prevSpeed += dt / 5000), 0, SPEED); //~5000-10000
 
-                moveAngle = 0;
-                if (goalAngle != -1) {
-                    rotateCommand = constrain(-ANGLE_360_TO_180(goalAngle)/90, -speed/30, speed/30);
-                    // moveAngle = rotateCommand*3;
-                }
-                DPRINT(rotateCommand);
+            //     moveAngle = 0;
+            //     if (goalAngle != -1) {
+            //         rotateCommand = constrain(-ANGLE_360_TO_180(goalAngle)/30, -speed/30, speed/30);
+            //         moveAngle = 0;
+            //     }
+            //     DPRINT(rotateCommand);
 
-                if (abs(goalAngle) < 10 && (millis() - lastKickerMillis) > 500 && isBallCaptured) {
-                    kicker.kick();
-                    lastKickerMillis = millis();
-                }
-                // rotateCommand = constrain(log(abs(-ANGLE_360_TO_180(goalAngle)+1))*-1*copysign(1,goalAngle), -speed/10, speed/10);
+            //     if (abs(ANGLE_360_TO_180(goalAngle)) < 3 && (millis() - lastKickerMillis) > 500 && isBallCaptured) {
+            //         kicker.kick();
+            //         lastKickerMillis = millis();
+            //     }
+            //     // rotateCommand = constrain(log(abs(-ANGLE_360_TO_180(goalAngle)+1))*-1*copysign(1,goalAngle), -speed/10, speed/10);
             }
         } else { // ball not in front, move towards it
             // lastAimMillis = 0;
@@ -674,6 +677,7 @@ void loop() {
     //// ** MOVEMENT ** ////
     // driveBase.setDrive(speed, moveAngle, rotateCommand); //Speed multiplied to accomodate for differences in speed with the wheels
     driveBase.setDrive(speed, moveAngle, rotateCommand, 0);
+
 
     //// ** DEBUG ** ////
     // DPRINT(isBallInFront);
