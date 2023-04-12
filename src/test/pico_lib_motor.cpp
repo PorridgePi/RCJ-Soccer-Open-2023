@@ -4,10 +4,10 @@
 
 #define MAX_SPEED 0.5
 
-Motor motor1(PIN_BOT_A_LPWM, PIN_BOT_A_RPWM); // top left JST, top right motor
-Motor motor2(PIN_BOT_B_RPWM, PIN_BOT_B_LPWM); // bottom left JST, bottom right motor
-Motor motor3(PIN_TOP_A_LPWM, PIN_TOP_A_RPWM);   // bottom right JST, bottom left motor
-Motor motor4(PIN_TOP_B_LPWM, PIN_TOP_B_RPWM);  // top right JST, top left motor
+Motor motorBR(PIN_BOT_A_LPWM, PIN_BOT_A_RPWM); // top left JST, top right motor
+Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM); // bottom left JST, bottom right motor
+Motor motorFL(PIN_TOP_A_LPWM, PIN_TOP_A_RPWM);   // bottom right JST, bottom left motor
+Motor motorBL(PIN_TOP_B_RPWM, PIN_TOP_B_LPWM);  // top right JST, top left motor
 
 // Conflicting PWM pins:
 
@@ -28,11 +28,20 @@ void setup() {
 }
 
 void loop() {
-    float speed = sin(millis() / 5000.0);
+    float speed = 0.3;//sin(millis() / 5000.0);
     Serial.print(speed);
     Serial.println();
     motor1.setSpeed(speed);
+    delay(1000);
+    motor1.setSpeed(0);
     motor2.setSpeed(speed);
+    delay(1000);
+    motor2.setSpeed(0);
     motor3.setSpeed(speed);
+    delay(1000);
+    motor3.setSpeed(0);
     motor4.setSpeed(speed);
+     delay(1000);
+    motor4.setSpeed(0);
+    delay(5000);
 }

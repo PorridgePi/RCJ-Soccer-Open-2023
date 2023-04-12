@@ -83,10 +83,10 @@ long long t;
 
 // Movement
 #ifndef IS_SECOND_BOT // original bot
+Motor motorBR(PIN_BOT_A_LPWM, PIN_BOT_A_RPWM);
 Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM);
-Motor motorBR(PIN_BOT_A_RPWM, PIN_BOT_A_LPWM);
+Motor motorFL(PIN_TOP_A_LPWM, PIN_TOP_A_RPWM);
 Motor motorBL(PIN_TOP_B_RPWM, PIN_TOP_B_LPWM);
-Motor motorFL(PIN_TOP_A_RPWM, PIN_TOP_A_LPWM);
 #else // new bot
 Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM);
 Motor motorBR(PIN_BOT_A_LPWM, PIN_BOT_A_RPWM);
@@ -118,10 +118,10 @@ int x, y; // coordinate of robot relative to field
 
 // IMU
 // IMU imu(Wire1, 0x1E); // IMU providing heading
-#ifdef IS_SECOND_BOT
+#ifndef IS_SECOND_BOT
 MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
 #else
-IMU imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
+IMU imu(Wire1, 75, -10, 1, 0);
 #endif
 
 #ifdef USE_MULTICORE

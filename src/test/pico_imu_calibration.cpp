@@ -1,10 +1,13 @@
 #include <Arduino.h>
 #include <Definitions.h>
-#include <MechaQMC5883.h>
+//#include <MechaQMC5883.h>
 #include <Wire.h>
+#include <IMU.h>
 
-MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
+//MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
 // MechaQMC5883 imu(Wire1, 0, 0, 1.07350865912, 66.1081956153);
+
+IMU imu(Wire1, 75, -10, 1, 0);
 
 #include <Drive.h>
 #define MAX_SPEED 0.5

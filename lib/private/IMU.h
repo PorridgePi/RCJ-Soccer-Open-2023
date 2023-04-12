@@ -90,11 +90,10 @@ class IMU {
             for (unsigned int i = 0; i < 6; i++) {
                 buff[i] = _wire.read();
             }
-            static int x, y;
-            x = -1 * (int16_t) (((((uint16_t) buff[4]) << 8) | buff[5])); // X axis (internal sensor -y axis)
-            y = -1 * (int16_t) (((((uint16_t) buff[0]) << 8) | buff[1])); // Y axis (internal sensor -x axis)
+            _mag[0] = -1 * (int16_t) (((((uint16_t) buff[4]) << 8) | buff[5])); // X axis (internal sensor -y axis)
+            _mag[1] = -1 * (int16_t) (((((uint16_t) buff[0]) << 8) | buff[1])); // Y axis (internal sensor -x axis)
             // uncorrected[2] = -1 * (int16_t) (((((uint16_t) buff[2]) << 8) | buff[3])); // Z axis (internal sensor -z axis
-            _correctReadings(&x, &y);
+            _correctReadings(&_mag[0], &_mag[1]);
         }
     };
 };

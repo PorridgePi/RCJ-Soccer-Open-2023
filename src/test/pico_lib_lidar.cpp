@@ -3,10 +3,10 @@
 
 int   frontDistRaw, backDistRaw, rightDistRaw, leftDistRaw;
 int   frontDist, backDist, rightDist, leftDist;
-Lidar lidarFront(Wire, 0x12, -5);
-Lidar lidarBack(Wire, 0x11, +5);
-Lidar lidarRight(Wire, 0x13, +4);
-Lidar lidarLeft(Wire, 0x10, +4);
+Lidar lidarFront(Wire, 0x11, +12); //0x11 for 2nd bot
+Lidar lidarBack(Wire, 0x12, +5); //0x12 for 2nd bot
+Lidar lidarRight(Wire, 0x13, +4); //0x13 for 2nd bot
+Lidar lidarLeft(Wire, 0x10, +3); //0x10 for 2nd bot
 
 void setup() {
     Wire.setSCL(13);
