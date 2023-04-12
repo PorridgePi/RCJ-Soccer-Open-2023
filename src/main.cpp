@@ -13,12 +13,19 @@
 #define USE_MULTICORE         // if defined, use second core for data update (NOTE: Overwritten by USE_OFFICIAL_PIXY_LIB)
 #define USE_OFFICIAL_PIXY_LIB // if defined, use official Pixy2 library (NOTE: Overwrites USE_MULTICORE)
 
+// #define IS_SECOND_BOT
+
 #define DEBUG_PRINT true
 
 #define GOAL_YELLOW false // colour of goal to score on (YELLOW or BLUE)
 
+#ifndef IS_SECOND_BOT
 #define pixyXC 142 // x-coordinate of center of Pixy2 camera
 #define pixyYC 112 // y-coordinate of center of Pixy2 camera
+#else
+#define pixyXC 160 // x-coordinate of center of Pixy2 camera
+#define pixyYC 121 // y-coordinate of center of Pixy2 camera
+#endif
 
 #define IN_FRONT_FOV 7 // angle in front of robot to search for ball
 
@@ -58,6 +65,7 @@ int emptyLightGateThreshold;
 
 // Goals
 float goalAngle;
+int goalDistance;
 
 // Bottom Plate
 bool isOnLine; // true (1) if robot is on line (i.e. any bottom plate TEMT6000 exceeds threshold), false (0) if not
@@ -71,22 +79,36 @@ float lineAngle;
 long long t;
 
 // PID
-PID pid(0.0075, 0, 0.125, 2000);
+// PID pid(0.0075, 0, 0, 5000);
 
 // Movement
+#ifndef IS_SECOND_BOT // original bot
 Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM);
 Motor motorBR(PIN_BOT_A_RPWM, PIN_BOT_A_LPWM);
 Motor motorBL(PIN_TOP_B_RPWM, PIN_TOP_B_LPWM);
 Motor motorFL(PIN_TOP_A_RPWM, PIN_TOP_A_LPWM);
+#else // new bot
+Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM);
+Motor motorBR(PIN_BOT_A_LPWM, PIN_BOT_A_RPWM);
+Motor motorBL(PIN_TOP_B_RPWM, PIN_TOP_B_LPWM);
+Motor motorFL(PIN_TOP_A_LPWM, PIN_TOP_A_RPWM);
+#endif
 Drive driveBase(motorFR, motorBR, motorBL, motorFL); // drive base controlling all 4 motors
 float speed = SPEED;
 float speedX, speedY, moveAngle;
 
 // LiDAR
+#ifndef IS_SECOND_BOT // original bot
 Lidar lidarFront(Wire, 0x12, -5); // front LiDAR
 Lidar lidarRight(Wire, 0x13, +4); // right LiDAR
 Lidar lidarBack(Wire, 0x11, +5);  // back LiDAR
 Lidar lidarLeft(Wire, 0x10, +4);  // left LiDAR
+#else // new bot
+Lidar lidarFront(Wire, 0x11, +7); // front LiDAR
+Lidar lidarRight(Wire, 0x13, +7); // right LiDAR
+Lidar lidarBack(Wire, 0x12, 0);  // back LiDAR
+Lidar lidarLeft(Wire, 0x10, +3);  // left LiDAR
+#endif
 #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
 volatile float frontDist, backDist, rightDist, leftDist; // volatile for multicore access
 #else
@@ -105,8 +127,7 @@ float botHeading; // heading of robot (0 to 360 degrees)
 float rotateCommand; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
 
-// Kicker
-// Kicker kicker(PIN_RELAY);
+Kicker kicker(PIN_RELAY);
 
 //// ** FUNCTIONS ** ////
 // continuous async blink LED to indicate program is running and Pico has not hang
@@ -127,14 +148,17 @@ void blinkLED(int interval = 50) {
 
 // Localisation
 // move to coordinates (x, y) with tolerance in cm
-int moveTo(int targetX, int targetY, int tolerance) {
+void moveTo(int targetX, int targetY, int tolerance) {
     float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
     float dist        = hypot(targetX - x, targetY - y); // distance to target coordinates
-
+    DPRINT(dist);
     if (dist > tolerance) { // not reached target, move
-        return LIM_ANGLE(targetAngle);
+        moveAngle = LIM_ANGLE(targetAngle);
+        float maxSpeed = SPEED * constrain(powf((dist / 150.0f), 0.3f), 0, 1);
+        EPRINT(maxSpeed/SPEED);
+        speed = constrain(speed, -maxSpeed, maxSpeed);
     } else { // reached target, stop
-        return -1;
+        speed = 0;
     }
 }
 
@@ -194,27 +218,27 @@ void stayWithinBounds() {
         maxXL = borderDist + borderTolerance;
     }
 
-    DPRINT(maxXL);
-    DPRINT(maxXR);
+    // DPRINT(maxXL);
+    // DPRINT(maxXR);
 
-    const int angleRange = 10;
+    const int angleRange = 5;
     if (moveAngle <= angleRange || moveAngle >= (360 - angleRange) || (moveAngle >= (180 - angleRange) && moveAngle <= (180 + angleRange))) {
         if (maxXR < maxXL) { // consider right border
-            EPRINT("ri ");
+            // EPRINT("ri ");
             maxX = maxXR;
             distanceX = max(0, maxX - x);
         } else { // consider left border
-            EPRINT("le ");
+            // EPRINT("le ");
             maxX = maxXL;
             distanceX = max(0, x - maxX);
         }
     } else {
-        if (moveAngle > 30 && moveAngle <= 180) { // moving right
-            EPRINT("ri ");
+        if (moveAngle > 0 && moveAngle <= 180) { // moving right
+            // EPRINT("ri ");
             maxX = maxXR;
             distanceX = max(0, maxX - x);
-        } else if (moveAngle > 180 && moveAngle < 330) {
-            EPRINT("le ");
+        } else if (moveAngle > 180 && moveAngle < 360) {
+            // EPRINT("le ");
             maxX = maxXL;
             distanceX = max(0, x - maxX);
         }
@@ -226,11 +250,11 @@ void stayWithinBounds() {
     static float distanceY;
     int maxY;
     if (moveAngle >= 90 && moveAngle < 270) { // moving down
-        EPRINT("do ");
+        // EPRINT("do ");
         maxY = max(borderDist, powf((3.0f / 80.0f * (x - 91.0f)), 4) + 243 - (23 + borderDist + borderTolerance)); // 38 is wall to goal border
         distanceY = max(0, maxY - y);
     } else if (moveAngle >= 270 || moveAngle < 90) { // moving up
-        EPRINT("up");
+        // EPRINT("up");
         maxY = max(borderDist, - powf((3.0f / 80.0f * (x - 91.0f)), 4) + (13 + borderDist + borderTolerance));
         distanceY = max(0, y - maxY);
     }
@@ -300,6 +324,25 @@ int getBallDistance() {
     } else {
         return -1; // return -1 if no ball detected
     }
+}
+
+int getGoalDistance() {
+    int dist = -1;
+    float maxSize = 0;
+    for (int i = 0; i < numBlocks; i++) {
+        Block block = (GOAL_YELLOW == true ? yellowBlocks[i] : blueBlocks[i]);
+        if (block.m_signature == (GOAL_YELLOW == true ? SIGNATURE_YELLOW_GOAL : SIGNATURE_BLUE_GOAL)) {
+            float area = block.m_height * block.m_width;
+            if (area > maxSize) {
+                int xDiff = block.m_x - pixyXC;
+                int yDiff = block.m_y - pixyYC;
+                maxSize = area;
+                dist = 5 * hypot(xDiff, yDiff);
+            }
+        }
+    }
+    
+    return dist;
 }
 
 // gets angle of ball relative to robot (0 to 360 degrees), returns -1 if no ball detected
@@ -377,11 +420,15 @@ void categoriseBlock() {
     // Update goal angle and distance
     static unsigned long goalLastMillis = millis(); // last time goal was detected
     if ((GOAL_YELLOW == true ? numYellow : numBlue) > 0) {
+        goalDistance = getGoalDistance();
+        goalDistance = powf(((goalDistance-200.0f)/27.0f), 2) ;
+        DPRINT(goalDistance);
         goalAngle = getGoalAngle((GOAL_YELLOW == true ? numYellow : numBlue));
     } else { // no goal detected
         // if no goal detected for 1 second, reset goal angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
         if (millis() - goalLastMillis > 1000) {
+            goalAngle = -1;
             goalAngle = -1;
             goalLastMillis = millis();
         }
@@ -415,17 +462,17 @@ float ballTrack() {
 
     // negative number with float power will return inf!
     if (ballAngle >= 0 && ballAngle < 45) { // front right
-        angle = ballAngle + 90 * (1 - pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 1));
+        angle = ballAngle + 90 * (1 - pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.8));
     } else if (ballAngle >= 45 && ballAngle < 90) { // front right
-        angle = ballAngle + 90 * (1 - pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 1));
+        angle = ballAngle + 90 * (1 - pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.9));
     } else if (ballAngle >= 90 && ballAngle < 180) {
-        angle = ballAngle + 90 * (1 - pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.7));
+        angle = ballAngle + 90 * (1 - pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.6));
     } else if (ballAngle >= 180 && ballAngle < 270) {
-        angle = ballAngle - 90 * (1 - (pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.7)));
+        angle = ballAngle - 90 * (1 - (pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.6)));
     } else if (ballAngle >= 270 && ballAngle < 315) { // front left
-        angle = ballAngle - 90 * (1 - (pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 1)));
+        angle = ballAngle - 90 * (1 - (pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.9)));
     } else if (ballAngle >= 315 && ballAngle < 360) { // front left
-        angle = ballAngle - 90 * (1 - (pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 1)));
+        angle = ballAngle - 90 * (1 - (pow((float) max((ballDistance - MIN_BALL_DIST_THRESHOLD), 0) / MAX_BALL_DIST_THRESHOLD, 0.8)));
     }
 
     // DPRINT(ballDistInCm);
@@ -530,39 +577,62 @@ void loop() {
 
     bool isAiming = false;
     static unsigned long lastKickerMillis = millis();
+    static float prevMoveAngle = 0;
+    static float prevSpeed = 0.1;
 
     //// ** STRATEGY ** ////
+    DPRINT(goalDistance);
     //rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
     //rotateCommand = constrain(abs(rotateCommand), 0.03, 1) * copysign(1, rotateCommand);
-    rotateCommand = constrain(pid.compute(0, -(LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1);
+    // rotateCommand = constrain(pid.compute(0, -(LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1);
+    rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1);
+
+    readBallCap();
     if (ballAngle == -1) { // no ball detected, move to centre
-        // moveAngle = moveTo(91, 122, 2);
-        speed = 0; // stop
+        moveTo(91, 122, 3);
     } else { // ball detected
+            static unsigned long lastAimMillis = millis();
+
         if (isBallInFront || isBallCaptured) { // ball in front
-            moveAngle = ballAngle;
-            if (ballDistance > MIN_BALL_DIST_THRESHOLD + 30) {
-                float speedConstrain = constrain(SPEED * constrain(powf(max(0, (float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / (float) (MAX_BALL_DIST_THRESHOLD - MIN_BALL_DIST_THRESHOLD)), 0.8f), 0, 1), max(0.2, SPEED / 3), SPEED);
+
+            if (ballDistance > MIN_BALL_DIST_THRESHOLD + 20 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
+                float distanceScale = constrain(powf(max(0, (float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / (float) (MAX_BALL_DIST_THRESHOLD - MIN_BALL_DIST_THRESHOLD)), 0.8f), 0, 1);
+                float speedConstrain = constrain(SPEED * distanceScale, max(0.2, SPEED / 3), SPEED);
                 speed = constrain(speed, -speedConstrain, speedConstrain);
-            } else {
-                // speed = min(speed, 0.3); // move towards ball at slower speed
-                speed = 0.5;
-                moveAngle = goalAngle;
-                // rotateCommand = constrain(-ANGLE_360_TO_180(goalAngle)/1080, -1, 1);
-                // DPRINT(rotateCommand);
+                moveAngle = 0;
+                prevMoveAngle = 0;
+                prevSpeed = 0.1;
+            } else { // ball close enough, aim ISSUE
+                lastAimMillis = millis();
+                // moveAngle = constrain(prevMoveAngle += goalAngle * dt / 2000, 0, goalAngle);
+                // prevMoveAngle = moveAngle;
+                // DPRINT(prevMoveAngle);
+                
+                speed = constrain((prevSpeed += dt / 5000), 0, SPEED);
+
+                moveAngle = 0;
+                if (goalAngle != -1) {
+                    rotateCommand = constrain(-ANGLE_360_TO_180(goalAngle)/90, -speed/30, speed/30);
+                    // moveAngle = rotateCommand*3;
+                }
+                DPRINT(rotateCommand);
+
+                if (abs(goalAngle) < 10 && (millis() - lastKickerMillis) > 500 && isBallCaptured) {
+                    kicker.kick();
+                    lastKickerMillis = millis();
+                }
                 // rotateCommand = constrain(log(abs(-ANGLE_360_TO_180(goalAngle)+1))*-1*copysign(1,goalAngle), -speed/10, speed/10);
             }
-
-            // if (isBallCaptured) { // ball captured
-
-            // } else {
-                // speed = min(speed, 0.3); // move towards ball at slower speed
-                // moveAngle = ballAngle;
-            // }
         } else { // ball not in front, move towards it
+            // lastAimMillis = 0;
             moveAngle = ballTrack();
-            float ballDistanceSpeed = SPEED * 0.5 * (constrain(powf((ballAngle < 180.0f ? ballAngle : 360.0f - ballAngle) / 180.0f, 0.3) , 0, 1) + constrain(powf(max(0, (float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / (float) (MAX_BALL_DIST_THRESHOLD - MIN_BALL_DIST_THRESHOLD)), 0.8f), 0, 1));
-
+            float distanceScale = constrain(powf(max(0, (float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / (float) (MAX_BALL_DIST_THRESHOLD - MIN_BALL_DIST_THRESHOLD)), 2.0f), 0, 1);
+            // DPRINT(distanceScale);
+            float angleScale = constrain(powf((ballAngle < 180.0f ? ballAngle : 360.0f - ballAngle) / 180.0f, 0.3f) , 0, 1);
+            // DPRINT(angleScale);
+            float ballDistanceSpeed = SPEED * constrain(distanceScale * powf((1 - angleScale), 4.0f) + angleScale, 0.2, 1);
+            // EPRINT(ballDistanceSpeed/SPEED);
+            // float ballDistanceSpeed = SPEED * angleScale;
             speed = constrain(speed, -ballDistanceSpeed, ballDistanceSpeed);
         }
     }
@@ -584,7 +654,7 @@ void loop() {
         // moveAngle = 0;
     // }
     // moveAngle = ballAngle; // direct movement straight to ball
-    // moveAngle = moveTo(91, 122, 2); // -1 if reached target
+    // moveTo(91, 122, 2); // -1 if reached target
 
     //// ** LOCALISATION ** ////
     if (moveAngle == -1) { // stop if moveAngle is -1
@@ -595,8 +665,8 @@ void loop() {
     stayWithinBounds();
     // Staying within bounds (failsafe) using TEMTs
     if (isOnLine == true) { // failsafe: if on line, move to the center
-        moveAngle = moveTo(91, 122, 2);
-        speed = 1;
+        moveTo(91, 122, 2);
+        speed = max(0.3, SPEED/2);
     }
 
     // confidence();
@@ -607,7 +677,7 @@ void loop() {
 
     //// ** DEBUG ** ////
     // DPRINT(isBallInFront);
-    // DPRINT(isBallCaptured);
+    DPRINT(isBallCaptured);
     DPRINT(moveAngle);
     // DPRINT(goalAngle);
     // DPRINT(isOnLine);
@@ -615,13 +685,18 @@ void loop() {
 
     DPRINT(goalAngle);
     // DPRINT(ballDistance);
-    // DPRINT(botHeading);
-    // DPRINT(frontDist);
-    // DPRINT(backDist);
-    // DPRINT(leftDist);
-    // DPRINT(rightDist);
+    DPRINT(botHeading); 
+    DPRINT(frontDist);
+    DPRINT(backDist);
+    DPRINT(leftDist);
+    DPRINT(rightDist);
     DPRINT(x);
     DPRINT(y);
+
+    // DPRINT(lidarFront.read());
+    // DPRINT(lidarBack.read());
+    // DPRINT(lidarLeft.read());
+    // DPRINT(lidarRight.read());
 
     // Loop time
     EPRINT((float)(micros()-t)/1000);
