@@ -79,7 +79,7 @@ float lineAngle;
 long long t;
 
 // PID
-// PID pid(0.01, 0, 0.04, 2000);
+PID pid(0.0075, 0, 0.08, 5000);
 
 // Movement
 #ifndef IS_SECOND_BOT // original bot
@@ -589,8 +589,8 @@ void loop() {
     DPRINT(goalDistance);
     //rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
     //rotateCommand = constrain(abs(rotateCommand), 0.03, 1) * copysign(1, rotateCommand);
-    //rotateCommand = constrain(pid.compute(0, -ANGLE_360_TO_180(botHeading)), -1, 1);
-    rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1);
+    rotateCommand = constrain(pid.compute(0, -(LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1);
+    // rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1);
 
     readBallCap();
     if (ballAngle == -1) { // no ball detected, move to centre
@@ -598,7 +598,6 @@ void loop() {
     } else { // ball detected
         static unsigned long lastAimMillis = millis();
         if (isBallInFront || isBallCaptured) { // ball in front
-
             if (ballDistance > MIN_BALL_DIST_THRESHOLD + 20 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
                 float distanceScale = constrain(powf(max(0, (float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / (float) (MAX_BALL_DIST_THRESHOLD - MIN_BALL_DIST_THRESHOLD)), 0.8f), 0, 1);
                 float speedConstrain = constrain(SPEED * distanceScale, 0.15, SPEED);
