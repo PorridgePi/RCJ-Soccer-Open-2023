@@ -17,19 +17,21 @@ class Lidar {
         int readRaw() {
             // read before new request - 0.2 ms faster
             int response;
-            if (_wire.available()) {
-                response = _wire.read();
-            } else {
-                _wire.beginTransmission(_addr); // start bit
-                _wire.write(0x00);              // tell tfluna which register to read from, this register is low dist
-                _wire.endTransmission(); // end bit
-                _wire.requestFrom(_addr, 1); // request 1 bit
-                response = _wire.read(); // read the bit
-            }
+            // if (_wire.available()) {
+            //     response = _wire.read();
+            // } else {
+            //     _wire.beginTransmission(_addr); // start bit
+            //     _wire.write(0x00);              // tell tfluna which register to read from, this register is low dist
+            //     _wire.endTransmission(); // end bit
+            //     _wire.requestFrom(_addr, 1); // request 1 bit
+            //     response = _wire.read(); // read the bit
+            // }
             _wire.beginTransmission(_addr); // start bit
             _wire.write(0x00);              // tell tfluna which register to read from, this register is low dist
             _wire.endTransmission(); // end bit
             _wire.requestFrom(_addr, 1); // request 1 bit
+            response = _wire.read();
+
 
             return response;
         }
