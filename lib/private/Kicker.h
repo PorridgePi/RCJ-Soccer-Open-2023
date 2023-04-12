@@ -8,6 +8,7 @@ class Kicker {
         Kicker(int pin) :
             _pin(pin) { // constructor
             pinMode(_pin, OUTPUT);
+            digitalWrite(_pin, HIGH);
         };
         void kick() {
             digitalWrite(_pin, LOW);
