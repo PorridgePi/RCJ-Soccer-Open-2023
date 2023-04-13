@@ -17,8 +17,6 @@
 
 #define DEBUG_PRINT true
 
-// #define GOAL_YELLOW true // colour of goal to score on (YELLOW or BLUE)
-
 #ifndef IS_SECOND_BOT
 #define pixyXC 135 // x-coordinate of center of Pixy2 camera
 #define pixyYC 114 // y-coordinate of center of Pixy2 camera
@@ -75,7 +73,7 @@ int emptyLightGateThreshold;
 // Goals
 float goalAngle;
 int goalDistance;
-bool isGoalYellow;
+bool isGoalYellow; // colour of goal to score on (YELLOW or BLUE)
 bool isGoalDetermined = false;
 
 // Bottom Plate
@@ -801,21 +799,22 @@ void loop() {
     prevSpeed = speed;
 
     //// ** DEBUG ** ////
+    // DPRINT(moveAngle);
+    // DPRINT(speed);
+    // DPRINT(botHeading);
+    // DPRINT(rotateCommand);
+
     // DPRINT(isBallInFront);
     // DPRINT(isBallCaptured);
-    // DPRINT(moveAngle);
-    // DPRINT(goalAngle);
+
     DPRINT(isOnLine);
     DPRINT(wasOnLine);
 
-    // DPRINT(speed);
-
-    // DPRINT(rotateCommand);
     // DPRINT(ballAngle);
-
     // DPRINT(goalAngle);
     // DPRINT(ballDistance);
-    // DPRINT(botHeading);
+    // DPRINT(goalDistance);
+
     // DPRINT(frontDist);
     // DPRINT(backDist);
     // DPRINT(leftDist);
@@ -823,16 +822,11 @@ void loop() {
     DPRINT(x);
     DPRINT(y);
 
-    // DPRINT(lidarFront.read());
-    // DPRINT(lidarBack.read());
-    // DPRINT(lidarLeft.read());
-    // DPRINT(lidarRight.read());
-
     // Loop time
     EPRINT((float)(micros()-t)/1000);
     if (DEBUG_PRINT) Serial.println();
 
-    blinkLED();
+    if (DEBUG_PRINT) blinkLED();
 }
 
 // core 1 loop
