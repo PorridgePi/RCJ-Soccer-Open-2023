@@ -10,12 +10,9 @@
 #include <Kicker.h>
 
 //// ** CONFIG ** ////
-#define USE_MULTICORE         // if defined, use second core for data update (NOTE: Overwritten by USE_OFFICIAL_PIXY_LIB)
-#define USE_OFFICIAL_PIXY_LIB // if defined, use official Pixy2 library (NOTE: Overwrites USE_MULTICORE)
-
 #define DEBUG_LED true
 #define IS_CALIBRATING false
-#define DEBUG_PRINT false
+#define DEBUG_PRINT true
 #define DEBUG_LOOP_TIME true
 
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
@@ -52,7 +49,6 @@
 
 //// ** DECLARATIONS ** ////
 // Pixy2 Camera
-#ifdef USE_OFFICIAL_PIXY_LIB
 #include <Pixy2UART.h> // include official Pixy2 library
 Pixy2UART pixy;        // Pixy object from official Pixy2 library
 
@@ -61,10 +57,7 @@ Block        blocks[50];       // array of all blocks detected by Pixy2
 Block        ballBlocks[10];   // array of ball blocks
 Block        yellowBlocks[10]; // array of yellow goal blocks
 Block        blueBlocks[10];   // array of blue goal blocks
-#else
-#include <Camera.h> // include personal Pixy2 library
-Camera Pixy(PIN_CAM_RX, PIN_CAM_TX_MISO, pixyXC, pixyYC); // Camera object from personal Pixy2 library
-#endif
+
 
 // Ball
 int ballAngle;    // angle of ball relative to robot (0 to 360 degrees)
@@ -124,11 +117,9 @@ Lidar lidarRight(Wire, 0x13, +7); // right LiDAR
 Lidar lidarBack(Wire, 0x12, +3);  // back LiDAR
 Lidar lidarLeft(Wire, 0x10, +3);  // left LiDAR
 #endif
-#if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
-volatile float frontDist, backDist, rightDist, leftDist; // volatile for multicore access
-#else
+
 float frontDist, backDist, rightDist, leftDist; // distance to obstacles
-#endif
+
 int x, y; // coordinate of robot relative to field
 
 // IMU
@@ -139,11 +130,7 @@ MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
 IMU imu(Wire1, 75, -10, 1, 0);
 #endif
 
-#ifdef USE_MULTICORE
-volatile float botHeading; //  heading of robot (0 to 360 degrees), volatile for multicore access
-#else
 float botHeading; // heading of robot (0 to 360 degrees)
-#endif
 float rotateCommand; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
 
@@ -390,7 +377,6 @@ int calibrateLightGate() {
 }
 
 // Camera
-#ifdef USE_OFFICIAL_PIXY_LIB
 // gets distance to ball (arbitrary units), returns -1 if no ball detected
 int getBallDistance() {
     Block ballBlock = ballBlocks[0]; // get first ball block ONLY (Potential improvement?)
@@ -512,13 +498,6 @@ void categoriseBlock() {
         }
     }
 }
-#else
-void updateBallData() {
-    Pixy.isNewDataPresent(); // checks if new data is present and parses it
-    ballAngle    = Pixy.getBallAngle();
-    ballDistance = Pixy.getBallDistance();
-}
-#endif
 
 float ballTrack() {
     // Move perpendicular to ball if near, move straight if far
@@ -670,12 +649,7 @@ void setup() {
     // UART
     Serial.begin(9600);
 
-    #ifndef USE_OFFICIAL_PIXY_LIB
-    Pixy.begin(19200);
-    #endif
-    #if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
     setupDevices();
-    #endif
 
     // LED
     pinMode(PIN_LED, OUTPUT);
@@ -683,12 +657,7 @@ void setup() {
 
 // core 1 setup
 void setup1() {
-    #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
-    setupDevices();
-    #endif
-    #ifdef USE_OFFICIAL_PIXY_LIB
     pixy.init();
-    #endif
 }
 
 // core 0 loop
@@ -696,23 +665,13 @@ void loop() {
     float dt = (micros() - t) / 1000;
     t = micros(); // loop time
     speed = SPEED;
-
-    //// ** DATA UPDATE & PROCESSING ** ////
-    #if !defined(USE_MULTICORE) || defined(USE_OFFICIAL_PIXY_LIB)
-    updateData();
-    #endif
-
-    #ifdef USE_OFFICIAL_PIXY_LIB
-    categoriseBlock();
-    #else
-    updateBallData();
-    #endif
-
-
-    bool isAiming = false;
     static unsigned long lastKickerMillis = millis();
     static float prevMoveAngle = 0;
     static float prevSpeed = 0.1;
+
+    //// ** DATA UPDATE & PROCESSING ** ////
+    updateData();
+    categoriseBlock();
 
     //// ** STRATEGY ** ////
     //rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
@@ -815,8 +774,8 @@ void loop() {
     DPRINT(isOnLine);
     DPRINT(wasOnLine);
 
-    // DPRINT(ballAngle);
-    // DPRINT(goalAngle);
+    DPRINT(ballAngle);
+    DPRINT(goalAngle);
     // DPRINT(ballDistance);
     // DPRINT(goalDistance);
 
@@ -862,7 +821,6 @@ void loop() {
 
 // core 1 loop
 void loop1() {
-    #ifdef USE_OFFICIAL_PIXY_LIB
     pixy.ccc.getBlocks(); // get blocks from Pixy
 
     numBlocks = pixy.ccc.numBlocks;    // number of blocks detected
@@ -871,11 +829,4 @@ void loop1() {
         // copy blocks to array so that they can be accessed in main loop
         memcpy(&blocks[i], &pixy.ccc.blocks[i], sizeof(Block));
     }
-    #else
-    Pixy.readData();
-    #endif
-
-    #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
-    updateData();
-    #endif
 }
