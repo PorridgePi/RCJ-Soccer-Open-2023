@@ -2,7 +2,7 @@
 #include <IMU.h>
 #include <Wire.h>
 
-IMU imu(Wire1, 0x1E);
+IMU imu(Wire1, 75, -10, 1, 0);
 
 void setup() {
     Wire1.setSCL(3);
