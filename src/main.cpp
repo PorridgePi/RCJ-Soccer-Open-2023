@@ -13,16 +13,17 @@
 #define USE_MULTICORE         // if defined, use second core for data update (NOTE: Overwritten by USE_OFFICIAL_PIXY_LIB)
 #define USE_OFFICIAL_PIXY_LIB // if defined, use official Pixy2 library (NOTE: Overwrites USE_MULTICORE)
 
-// #define IS_SECOND_BOT
+#define DEBUG_LED true
+#define IS_CALIBRATING false
+#define DEBUG_PRINT false
+#define DEBUG_LOOP_TIME true
 
-#define DEBUG_PRINT true
-
-#ifndef IS_SECOND_BOT
+#ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
 #define pixyXC 135 // x-coordinate of center of Pixy2 camera
 #define pixyYC 114 // y-coordinate of center of Pixy2 camera
-#else
-#define pixyXC 160 // x-coordinate of center of Pixy2 camera
-#define pixyYC 121 // y-coordinate of center of Pixy2 camera
+#else                   // BOT 2
+#define pixyXC 165 // x-coordinate of center of Pixy2 camera
+#define pixyYC 105 // y-coordinate of center of Pixy2 camera
 #endif
 
 #define IN_FRONT_FOV 7 // angle in front of robot to search for ball
@@ -96,12 +97,12 @@ PID pid(0.0075, 0, 0.08, 5000);
 static float averageLastSpeed = 0;
 
 // Movement
-#ifndef IS_SECOND_BOT // original bot
+#ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
 Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM);
 Motor motorBR(PIN_BOT_A_RPWM, PIN_BOT_A_LPWM);
 Motor motorBL(PIN_TOP_B_RPWM, PIN_TOP_B_LPWM);
 Motor motorFL(PIN_TOP_A_RPWM, PIN_TOP_A_LPWM);
-#else // new bot
+#else                   // BOT 2
 Motor motorFR(PIN_BOT_B_LPWM, PIN_BOT_B_RPWM);
 Motor motorBR(PIN_BOT_A_LPWM, PIN_BOT_A_RPWM);
 Motor motorBL(PIN_TOP_B_RPWM, PIN_TOP_B_LPWM);
@@ -112,15 +113,15 @@ float speed = SPEED;
 float speedX, speedY, moveAngle;
 
 // LiDAR
-#ifndef IS_SECOND_BOT // original bot
+#ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
 Lidar lidarFront(Wire, 0x12, -5); // front LiDAR
 Lidar lidarRight(Wire, 0x13, +4); // right LiDAR
 Lidar lidarBack(Wire, 0x11, +5);  // back LiDAR
 Lidar lidarLeft(Wire, 0x10, +4);  // left LiDAR
-#else // new bot
-Lidar lidarFront(Wire, 0x11, +7); // front LiDAR
+#else                   // BOT 2
+Lidar lidarFront(Wire, 0x11, +5); // front LiDAR
 Lidar lidarRight(Wire, 0x13, +7); // right LiDAR
-Lidar lidarBack(Wire, 0x12, 0);  // back LiDAR
+Lidar lidarBack(Wire, 0x12, +3);  // back LiDAR
 Lidar lidarLeft(Wire, 0x10, +3);  // left LiDAR
 #endif
 #if defined(USE_MULTICORE) && !defined(USE_OFFICIAL_PIXY_LIB)
@@ -132,9 +133,9 @@ int x, y; // coordinate of robot relative to field
 
 // IMU
 // IMU imu(Wire1, 0x1E); // IMU providing heading
-#ifndef IS_SECOND_BOT
+#ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
 MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
-#else
+#else                   // BOT 2
 IMU imu(Wire1, 75, -10, 1, 0);
 #endif
 
@@ -146,7 +147,9 @@ float botHeading; // heading of robot (0 to 360 degrees)
 float rotateCommand; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
 
+#ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
 Kicker kicker(PIN_RELAY);
+#endif
 
 //// ** FUNCTIONS ** ////
 // continuous async blink LED to indicate program is running and Pico has not hang
@@ -750,6 +753,7 @@ void loop() {
                 // }
                 // DPRINT(rotateCommand);
 
+                #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
                 if (
                     isBallCaptured &&
                     (millis() - lastKickerMillis) > 500 &&
@@ -761,6 +765,7 @@ void loop() {
                     kicker.kick();
                     lastKickerMillis = millis();
                 }
+                #endif
                 // rotateCommand = constrain(log(abs(-ANGLE_360_TO_180(goalAngle)+1))*-1*copysign(1,goalAngle), -speed/10, speed/10);
                 // }
             }
@@ -822,11 +827,37 @@ void loop() {
     DPRINT(x);
     DPRINT(y);
 
-    // Loop time
-    EPRINT((float)(micros()-t)/1000);
-    if (DEBUG_PRINT) Serial.println();
+    if (IS_CALIBRATING) {
+        Serial.print("Front: ");
+        Serial.print(lidarFront.readRaw());
+        Serial.print("\t");
+        Serial.print(lidarFront.read());
+        Serial.print("\t");
+        Serial.print("Back: ");
+        Serial.print(lidarBack.readRaw());
+        Serial.print("\t");
+        Serial.print(lidarBack.read());
+        Serial.print("\t");
+        Serial.print("Left: ");
+        Serial.print(lidarLeft.readRaw());
+        Serial.print("\t");
+        Serial.print(lidarLeft.read());
+        Serial.print("\t");
+        Serial.print("Right: ");
+        Serial.print(lidarRight.readRaw());
+        Serial.print("\t");
+        Serial.print(lidarRight.read());
+        Serial.print("\t");
+        Serial.print("Ball: ");
+        Serial.print(ballAngle);
+        Serial.println("");
+    }
 
-    if (DEBUG_PRINT) blinkLED();
+    // Loop time
+    if (DEBUG_LOOP_TIME) Serial.print((float)(micros()-t)/1000);
+    if (DEBUG_PRINT || DEBUG_LOOP_TIME) Serial.println();
+
+    if (DEBUG_LED) blinkLED();
 }
 
 // core 1 loop
