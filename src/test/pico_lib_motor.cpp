@@ -28,20 +28,21 @@ void setup() {
 }
 
 void loop() {
-    float speed = 0.3;//sin(millis() / 5000.0);
+    float speed = 0.3; // sin(millis() / 5000.0);
     Serial.print(speed);
     Serial.println();
-    motor1.setSpeed(speed);
+
+    motorFR.setSpeed(speed);
     delay(1000);
-    motor1.setSpeed(0);
-    motor2.setSpeed(speed);
+    motorFR.setSpeed(0);
+    motorBR.setSpeed(speed);
     delay(1000);
-    motor2.setSpeed(0);
-    motor3.setSpeed(speed);
+    motorBR.setSpeed(0);
+    motorBL.setSpeed(speed);
     delay(1000);
-    motor3.setSpeed(0);
-    motor4.setSpeed(speed);
-     delay(1000);
-    motor4.setSpeed(0);
-    delay(5000);
+    motorBL.setSpeed(0);
+    motorFL.setSpeed(speed);
+    delay(1000);
+    motorFL.setSpeed(0);
+    delay(3000);
 }
