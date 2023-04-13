@@ -172,11 +172,10 @@ void blinkLED(int interval = 50) {
 void moveTo(int targetX, int targetY, int tolerance) {
     float targetAngle = DEG(atan2(targetY - y, targetX - x)) + 90;
     float dist        = hypot(targetX - x, targetY - y); // distance to target coordinates
-    // DPRINT(dist);
+
     if (dist > tolerance) { // not reached target, move
         moveAngle = LIM_ANGLE(targetAngle);
         float maxSpeed = SPEED * constrain(powf((dist / 150.0f), 0.3f), 0, 1);
-        // EPRINT(maxSpeed/SPEED);
         speed = constrain(speed, -maxSpeed, maxSpeed);
     } else { // reached target, stop
         speed = 0;
@@ -262,7 +261,6 @@ void stayWithinBounds() {
             distanceX = x - maxX;
         }
     // }
-    // DPRINT(speedX);
 
     // increase confidence power if near border
     const int minDistanceX = 30;
@@ -272,7 +270,7 @@ void stayWithinBounds() {
         confXPower = CONFX_POWER;
     }
 
-    DPRINT(confXPower);
+    // DPRINT(confXPower);
 
     multiplierX = constrain(1 * distanceX / 91, -1, 1); // TODO IMPORTANT INCREASE 1.7 ON ACTUAL FIELD 
     speedX = constrain(abs(speedX), 0, abs(multiplierX)) * copysign(1, speedX) * copysign(1, multiplierX); // abs for magnitude, copysign for direction
@@ -290,19 +288,13 @@ void stayWithinBounds() {
         distanceY = y - maxY;
     }
 
-    DPRINT(moveAngle);
-
     multiplierY = powf(constrain(1.4f * abs(distanceY) / 121.5f, -1, 1), 1.0f) * copysign(1, distanceY); // tuning - change the 1.0f multiplier and 1.0f power
     speedY = constrain(abs(speedY), 0, abs(multiplierY)) * copysign(1, speedY) * copysign(1, multiplierY); // abs for magnitude, copysign for direction
-
-    DPRINT(distanceX);
-    DPRINT(speedX);
-
 
     // if (copysign(1, distanceX) == -1) {
     //     speedX = copysign(1, speedX) * max(1.0f, abs(speedX) * 2);
     // }
-    // DPRINT(speedX);
+
     // speedX *= min(1.0f, powf((1 - averageLastSpeed), 2));
     // EPRINT(min(1.0f, powf((1 - averageLastSpeed), 2)));
     // speedY *= min(1.0f, powf((1 - averageLastSpeed), 1));
@@ -367,10 +359,8 @@ void confidence() {
     speedY = constrain(speedY, -confY, confY);
     constructSpeed();
 
-    // DPRINT("mxs: "); DPRINT(maxXSpeed);
-    // DPRINT("mys: "); DPRINT(maxYSpeed);
-    // DPRINT(sumX);
-    // DPRINT(sumY);
+    // DPRINT(maxXSpeed);
+    // DPRINT(maxYSpeed);
     DPRINT(confX);
     DPRINT(confY);
 
@@ -567,7 +557,6 @@ float ballTrack() {
     }
 
     // DPRINT(ballDistInCm);
-    // DPRINT("angle: ");
     // DPRINT(angle);
 
     return LIM_ANGLE(angle);
@@ -751,8 +740,7 @@ void loop() {
                 // prevMoveAngle = moveAngle;
                 moveAngle = goalAngle;
                 speed = constrain(powf(prevSpeed, 0.99f) + dt * (min(6, (1.0f-((goalDistance-40)/80.0f))*6.0f)) / 1000, 0, SPEED);
-                DPRINT(prevSpeed);
-                DPRINT(goalDistance);
+                // DPRINT(prevSpeed);
                 EPRINT((min(6, (1.0f-((goalDistance-40)/100.0f))*6.0f)));
                 // EPRINT(powf(prevSpeed, 0.5f));
 
@@ -775,10 +763,6 @@ void loop() {
                     kicker.kick();
                     lastKickerMillis = millis();
                 }
-
-                DPRINT(isBallCaptured);
-                EPRINT(y < 100 && confY > 0.7);
-                EPRINT(x > (91 - 40 + 10) && x < (91 + 40 - 10) && confX > 0.9);
                 // rotateCommand = constrain(log(abs(-ANGLE_360_TO_180(goalAngle)+1))*-1*copysign(1,goalAngle), -speed/10, speed/10);
                 // }
             }
@@ -790,35 +774,9 @@ void loop() {
             float angleScale = constrain(powf((ballAngle < 180.0f ? ballAngle : 360.0f - ballAngle) / 180.0f, 0.9f) , 0, 1);
             // DPRINT(angleScale);
             float ballDistanceSpeed = SPEED * constrain(distanceScale * powf((1 - angleScale), 4.0f) + angleScale, max(0.2, SPEED / 4), 1);
-            // EPRINT(ballDistanceSpeed/SPEED);
-            // float ballDistanceSpeed = SPEED * angleScale;
             speed = constrain(speed, -ballDistanceSpeed, ballDistanceSpeed);
         }
     }
-
-    // if (isAiming == true) {
-    //     moveAngle = goalAngle;
-    //     goalRotateAngle = (goalAngle < 180 ? goalAngle : goalAngle - 360);
-    // } else {
-    //     goalRotateAngle = 0;
-    // }
-
-    // if (ballAngle != -1) { // if ball present, rotate robot to face the goal
-    //     goalRotateAngle = (goalAngle < 180 ? goalAngle : goalAngle - 360);
-    // }
-
-    // rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
-    // moveAngle = ballTrack(); // -1 if no ball detected
-    // if (ballAngle != -1 && (ballAngle >= 350 || ballAngle <= 10)) {
-        // moveAngle = 0;
-    // }
-    // moveAngle = ballAngle; // direct movement straight to ball
-    // moveTo(91, 122, 2); // -1 if reached target
-    
-    // moveTo(37, 0, 2);
-    // moveTo(0, 140, 2);
-    // speed = SPEED;
-
 
     //// ** LOCALISATION ** ////
     if (moveAngle == -1) { // stop if moveAngle is -1
@@ -834,10 +792,6 @@ void loop() {
     }
 
     confidence();
-    
-
-    // DPRINT(moveAngle);
-    // DPRINT(speed);
 
     //// ** MOVEMENT ** ////
     // driveBase.setDrive(speed, moveAngle, rotateCommand); //Speed multiplied to accomodate for differences in speed with the wheels
