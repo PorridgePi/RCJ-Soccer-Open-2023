@@ -47,6 +47,14 @@
 
 #define SPEED 1 // speed of robot (0.0 to 1.0)
 
+#ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
+#define SUM_X 188.0f
+#define SUM_Y 234.0f
+#else                   // BOT 2
+#define SUM_X 185.0f
+#define SUM_Y 232.0f
+#endif
+
 //// ** DECLARATIONS ** ////
 // Pixy2 Camera
 #include <Pixy2UART.h> // include official Pixy2 library
@@ -66,6 +74,7 @@ int emptyLightGateThreshold;
 
 // Goals
 float goalAngle;
+float ownGoalAngle;
 int goalDistance;
 bool isGoalYellow; // colour of goal to score on (YELLOW or BLUE)
 bool isGoalDetermined = false;
@@ -85,7 +94,7 @@ bool wasOnLine = false;
 float confXPower = CONFX_POWER;
 
 // PID
-PID pid(0.0075, 0, 0.08, 5000);
+PID pid(0.02, 0, 0.1, 5000);
 
 static float averageLastSpeed = 0;
 
@@ -293,10 +302,10 @@ void stayWithinBounds() {
     // DPRINT(speedY);
     // DPRINT(maxX);
     // DPRINT(maxY);
-    DPRINT(multiplierX);
-    DPRINT(multiplierY);
-    DPRINT(speedX);
-    DPRINT(speedY);
+    // DPRINT(multiplierX);
+    // DPRINT(multiplierY);
+    // DPRINT(speedX);
+    // DPRINT(speedY);
     // DPRINT(speed);
     // DPRINT(moveAngle);
     // DPRINT(distanceX);
@@ -310,11 +319,41 @@ void confidence() {
     float sumY = frontDist + backDist;
 
     // CALIBRATE ZERO ERROR
-    // DPRINT(sumX);
-    // DPRINT(sumY);
+    if (IS_CALIBRATING) {
+        static float avgSumX = sumX;
+        static float avgSumY = sumY;
+        avgSumX = (avgSumX * 99 + sumX) / 100;
+        avgSumY = (avgSumY * 99 + sumY) / 100;
 
-    confX = constrain(sumX / (182.0f + 3.0f), 0, 1);
-    confY = constrain(sumY / (243.0f - 14.0f), 0, 1);
+        Serial.print("avgSumX");
+        Serial.print("\t");
+        Serial.print(avgSumX);
+        Serial.print("\t");
+        Serial.print("avgSumY");
+        Serial.print("\t");
+        Serial.print(avgSumY);
+        Serial.print("\t");
+
+        Serial.print("sumX");
+        Serial.print("\t");
+        Serial.print(sumX);
+        Serial.print("\t");
+        Serial.print("sumY");
+        Serial.print("\t");
+        Serial.print(sumY);
+        Serial.print("\t");
+        Serial.print("confX");
+        Serial.print("\t");
+        Serial.print(confX);
+        Serial.print("\t");
+        Serial.print("confY");
+        Serial.print("\t");
+        Serial.print(confY);
+        Serial.print("\t");
+    }
+
+    confX = constrain(sumX / SUM_X, 0, 1);
+    confY = constrain(sumY / SUM_Y, 0, 1);
 
     // DPRINT(confX);
     // DPRINT(confY);
@@ -349,11 +388,11 @@ void confidence() {
 
     // DPRINT(maxXSpeed);
     // DPRINT(maxYSpeed);
-    DPRINT(confX);
-    DPRINT(confY);
+    // DPRINT(confX);
+    // DPRINT(confY);
 
     if (abs(ANGLE_360_TO_180(botHeading)) > 5 && speed < 0.2) {
-        speed = max(0.2, SPEED / 4);
+        speed = max(0.3, SPEED / 3);
     }
 
     if (wasOnLine == true && isOnLine == false && confX > 0.5 && confY > 0.5) {
@@ -424,7 +463,7 @@ int getBallAngle() {
     }
 }
 
-float getGoalAngle(int numBlocks) {
+float getGoalAngle(int numBlocks, bool isGoalYellow) {
     float angle;
     float maxSize = 0;
     for (int i = 0; i < numBlocks; i++) {
@@ -487,14 +526,25 @@ void categoriseBlock() {
     if ((isGoalYellow == true ? numYellow : numBlue) > 0) {
         goalDistance = getGoalDistance();
         goalDistance = powf(((goalDistance-200.0f)/27.0f), 2);
-        goalAngle = getGoalAngle((isGoalYellow == true ? numYellow : numBlue));
+        goalAngle = getGoalAngle((isGoalYellow == true ? numYellow : numBlue), isGoalYellow);
     } else { // no goal detected
         // if no goal detected for 1 second, reset goal angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
         if (millis() - goalLastMillis > 1000) {
             goalAngle = -1;
-            goalAngle = -1;
+            goalDistance = -1;
             goalLastMillis = millis();
+        }
+    }
+    static unsigned long ownGoalLastMillis = millis(); // last time goal was detected
+    if ((!isGoalYellow == true ? numYellow : numBlue) > 0) {
+        ownGoalAngle = getGoalAngle((!isGoalYellow == true ? numYellow : numBlue), !isGoalYellow);
+    } else { // no goal detected
+        // if no goal detected for 1 second, reset goal angle and distance
+        // time is to prevent false reset (i.e. due to lag or blind spot)
+        if (millis() - ownGoalLastMillis > 1000) {
+            goalAngle = -1;
+            ownGoalLastMillis = millis();
         }
     }
 }
@@ -627,6 +677,7 @@ void updateData() {
     botHeading  = imu.readAngle();                                   // from 0 to 360
     isOnLine    = digitalRead(PIN_BOTPLATE_D1);
     readBallCap();
+    categoriseBlock();
 
     if (digitalRead(PIN_ORI_RESET) == HIGH) { // reset IMU if button pressed
         imu.tare();
@@ -659,7 +710,7 @@ void setup() {
 void setup1() {
     pixy.init();
 }
-
+#ifndef IS_GOALIE
 // core 0 loop
 void loop() {
     float dt = (micros() - t) / 1000;
@@ -671,7 +722,6 @@ void loop() {
 
     //// ** DATA UPDATE & PROCESSING ** ////
     updateData();
-    categoriseBlock();
 
     //// ** STRATEGY ** ////
     //rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
@@ -745,7 +795,7 @@ void loop() {
         speed = 0;
     }
 
-    // Staying within bounds 
+    // Staying within bounds
     stayWithinBounds();
     // Staying within bounds (failsafe) using TEMTs
     if (wasOnLine == true) { // failsafe: if on line, move to the center
@@ -771,11 +821,11 @@ void loop() {
     // DPRINT(isBallInFront);
     // DPRINT(isBallCaptured);
 
-    DPRINT(isOnLine);
-    DPRINT(wasOnLine);
+    // DPRINT(isOnLine);
+    // DPRINT(wasOnLine);
 
-    DPRINT(ballAngle);
-    DPRINT(goalAngle);
+    // DPRINT(ballAngle);
+    // DPRINT(goalAngle);
     // DPRINT(ballDistance);
     // DPRINT(goalDistance);
 
@@ -783,8 +833,8 @@ void loop() {
     // DPRINT(backDist);
     // DPRINT(leftDist);
     // DPRINT(rightDist);
-    DPRINT(x);
-    DPRINT(y);
+    // DPRINT(x);
+    // DPRINT(y);
 
     if (IS_CALIBRATING) {
         Serial.print("Front: ");
@@ -809,15 +859,16 @@ void loop() {
         Serial.print("\t");
         Serial.print("Ball: ");
         Serial.print(ballAngle);
-        Serial.println("");
+        Serial.println();
     }
 
     // Loop time
-    if (DEBUG_LOOP_TIME) Serial.print((float)(micros()-t)/1000);
-    if (DEBUG_PRINT || DEBUG_LOOP_TIME) Serial.println();
+    if (!IS_CALIBRATING && DEBUG_LOOP_TIME) Serial.print((float)(micros()-t)/1000);
+    if (!IS_CALIBRATING && DEBUG_PRINT || DEBUG_LOOP_TIME) Serial.println();
 
     if (DEBUG_LED) blinkLED();
 }
+#endif
 
 // core 1 loop
 void loop1() {
