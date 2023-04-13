@@ -78,9 +78,7 @@ class IMU {
             _wire.write(0x03); // select register 3, X MSB register
             byte error = _wire.endTransmission();
             if (error) {
-                Serial.println("Error occured when writing");
-                if (error == 5)
-                    Serial.println("It was a timeout");
+                Serial.println("Error occured when writing to IMU");
             }
         }
 
