@@ -32,6 +32,11 @@ For Visual Studio Code:
 - `platformio.ini`: PlatformIO configuration file ([Documentation](https://docs.platformio.org/en/stable/projectconf/index.html))
 - `extra_scripts.py`: Extra scripts for PlatformIO (run before and after build - [Documentation](https://docs.platformio.org/en/latest/scripting/actions.html))
 
+## Calibration
+1. Camera centre x and y coordinates
+2. Individual LiDAR readings with 30cm ruler
+3. Overall LiDAR sum in each axis such that confidence = 1.00
+
 # Team Members
 - [Aaron](https://github.com/Aaron-Ong)
 - [Estelle](https://github.com/sniparret)
