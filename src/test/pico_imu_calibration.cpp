@@ -22,8 +22,8 @@ void setup() {
     Serial.begin(9600);
 
     // I2C for IMU
-    Wire1.setSCL(PIN_WIRE1_SCL);
-    Wire1.setSDA(PIN_WIRE1_SDA);
+    Wire1.setSCL(PIN_WIRE1_GY_SCL);
+    Wire1.setSDA(PIN_WIRE1_GY_SDA);
     Wire1.setTimeout(1); // set timeout to 1 ms
     Wire1.begin();
     imu.init();

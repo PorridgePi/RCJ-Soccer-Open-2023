@@ -18,8 +18,8 @@
 // I2C
 #define PIN_WIRE0_LUNA_SDA 12
 #define PIN_WIRE0_LUNA_SCL 13
-#define PIN_WIRE1_SDA 2 // Wire1 is used for the GY273 and the Pixy (optional)
-#define PIN_WIRE1_SCL 3 // Wire1 is used for the GY273 and the Pixy (optional)
+#define PIN_WIRE1_GY_SDA 2 // Wire1 is used for the GY273 and the Pixy (optional)
+#define PIN_WIRE1_GY_SCL 3 // Wire1 is used for the GY273 and the Pixy (optional)
 
 // UART/SPI
 #define PIN_BT_TX 17

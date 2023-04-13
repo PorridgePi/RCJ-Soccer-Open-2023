@@ -41,7 +41,7 @@ class IMU {
 
     private:
     const int _addr = 0X1E;
-    int       _calibration[4]; //[x,y,a,b,c]
+    float     _calibration[4]; //[x,y,a,b,c]
     float     _zeroError;
     bool      _initialised = false;
     int       _mag[2];
