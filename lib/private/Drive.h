@@ -17,7 +17,7 @@ class Drive {
             _motorFR(motorFR), _motorBR(motorBR), _motorBL(motorBL), _motorFL(motorFL) {
         }
 
-        void setDrive(float speed, int angle, float rotationRate, float differential) {
+        void setDrive(float speed, int angle, float rotationRate) {
             rotationRate = constrain(rotationRate, -1, 1);
             speed        = constrain(speed, -1, 1);
             // when rotationRate == 0, bot moves straight
@@ -27,11 +27,11 @@ class Drive {
             speedX = speed * cosf(RAD(angle + 45));
             speedY = speed * sinf(RAD(angle + 45));
 
-            float speedFL, speedFR, speedBL, speedBR; // Differential > 0 speeds up the from wheels, Differential < 0 speeds up the rear wheels
-            speedFR = speedX + max(differential, 0);
-            speedBR = speedY - max(-differential, 0);
-            speedFL = -speedY - max(differential, 0);
-            speedBL = -speedX + max(-differential, 0);
+            float speedFL, speedFR, speedBL, speedBR; //  > 0 speeds up the from wheels,  < 0 speeds up the rear wheels
+            speedFR = speedX;
+            speedBR = speedY;
+            speedFL = -speedY;
+            speedBL = -speedX;
 
             // Check if any of the wheel's speed exceeds ± 1,
             // if yes, find the wheel's speed that exceeded the most,
