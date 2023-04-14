@@ -36,6 +36,20 @@ class Lidar {
             return response;
         }
 
+        void enable() {
+            _wire.beginTransmission(_addr);
+            _wire.write(0x25);
+            _wire.write(0x00);
+            _wire.endTransmission();
+        }
+
+        void disable() {
+            _wire.beginTransmission(_addr);
+            _wire.write(0x25);
+            _wire.write(0x01);
+            _wire.endTransmission();
+        }
+
         int getFPS() {
             _wire.beginTransmission(_addr);
             _wire.write(0x26); // this register is low FPS
