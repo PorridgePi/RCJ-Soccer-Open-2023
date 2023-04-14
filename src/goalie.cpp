@@ -3,6 +3,8 @@
 
 bool isGoalie = true;
 
+#define MIN_BALL_DIST_THRESHOLD 230
+
 volatile float volatileBallAngle;
 volatile float ballAngleRate;
 
@@ -24,7 +26,7 @@ void loop() {
 
     if (isGoalie && ballAngle != -1 && abs(lastBallAngle - ballAngle) < 3) {
         EPRINT("aaaa");
-        if (millis() - lastBallChange > 3000) {
+        if (millis() - lastBallChange > 2000) {
             isGoalie = false;
         }
     } else {
@@ -34,7 +36,7 @@ void loop() {
     }
 
     if (!isGoalie && ballAngle == -1) {
-        if (millis() - lastBallNotSeen > 1000) {
+        if (millis() - lastBallNotSeen > 2000) {
             isGoalie = true;
         }
     } else {
@@ -90,7 +92,11 @@ void loop() {
         } else { // ball detected
             if (isBallInFront || isBallCaptured) { // ball in front
                 if (ballDistance > MIN_BALL_DIST_THRESHOLD + 10 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
-                    moveToBallInFront();
+                    if (isBallCaptured) {
+                        aim();
+                    } else {
+                        moveToBallInFront();
+                    }
                 } else { // ball close enough, aim ISSUE
                     // speed = 0;
                     aim();
@@ -99,22 +105,6 @@ void loop() {
                 moveTrackBall();
             }
         }
-
-        //// ** LOCALISATION ** ////
-        if (moveAngle == -1) { // stop if moveAngle is -1
-            speed = 0;
-        }
-
-        // Staying within bounds
-        stayWithinBounds();
-        // Staying within bounds (failsafe) using TEMTs
-        if (wasOnLine == true) { // failsafe: if on line, move to the center
-            moveTo(91, 122, 2);
-            speed = max(0.3, SPEED/2);
-        }
-
-        confidence();
-
     }
 
     //// ** LOCALISATION ** ////
@@ -142,22 +132,25 @@ void loop() {
     driveBase.setDrive(speed, moveAngle, rotateCommand);
     averageLastSpeed = (averageLastSpeed * 99 + speed) / 100;
 
+    DPRINT(confX);
+    DPRINT(confY);
+
     //// * DEBUG * ////
-    // DPRINT(isBallInFront);
-    // DPRINT(isBallCaptured);
+    DPRINT(isBallInFront);
+    DPRINT(isBallCaptured);
     // DPRINT(moveAngle);
-    // // DPRINT(goalAngle);
-    // // DPRINT(isOnLine);
+    DPRINT(goalAngle);
+    // DPRINT(isOnLine);
     // DPRINT(ballAngle);
     // DPRINT(ownGoalAngle);
 
     // DPRINT(goalAngle);
-    // // DPRINT(ballDistance);
+    DPRINT(ballDistance);
     // DPRINT(botHeading);
-    // DPRINT(frontDst);
-    // DPRINT(backDist)i;
-    // DPRINT(leftDist);
-    // DPRINT(rightDist);
+    DPRINT(frontDist);
+    DPRINT(backDist);
+    DPRINT(leftDist);
+    DPRINT(rightDist);
     // DPRINT(x);
     // DPRINT(y);
     // DPRINT(moveAngle);
