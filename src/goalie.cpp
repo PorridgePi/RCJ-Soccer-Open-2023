@@ -85,6 +85,36 @@ void loop() {
             speed = 0;
         }
     } else { // striker
+        if (ballAngle == -1) { // no ball detected, move to centre
+            moveTo(91, 122, 3);
+        } else { // ball detected
+            if (isBallInFront || isBallCaptured) { // ball in front
+                if (ballDistance > MIN_BALL_DIST_THRESHOLD + 10 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
+                    moveToBallInFront();
+                } else { // ball close enough, aim ISSUE
+                    // speed = 0;
+                    aim();
+                }
+            } else { // ball not in front, move towards it
+                moveTrackBall();
+            }
+        }
+
+        //// ** LOCALISATION ** ////
+        if (moveAngle == -1) { // stop if moveAngle is -1
+            speed = 0;
+        }
+
+        // Staying within bounds
+        stayWithinBounds();
+        // Staying within bounds (failsafe) using TEMTs
+        if (wasOnLine == true) { // failsafe: if on line, move to the center
+            moveTo(91, 122, 2);
+            speed = max(0.3, SPEED/2);
+        }
+
+        confidence();
+
     }
 
     //// ** LOCALISATION ** ////
@@ -100,7 +130,7 @@ void loop() {
         speed = 0.3;
     }
 
-    // confidence();
+    if (!isGoalie) confidence();
 
     //// ** MOVEMENT ** ////
     rotateCommand = constrain(-3 * ANGLE_360_TO_180(botHeading)/180, -1, 1);
