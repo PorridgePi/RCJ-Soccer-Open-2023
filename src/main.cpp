@@ -71,8 +71,8 @@ Block        blueBlocks[10];   // array of blue goal blocks
 
 
 // Ball
-float ballAngle;    // angle of ball relative to robot (0 to 360 degrees)
-float ballDistance; // distance to ball (arbitrary units due to non-linear relationship caused by mirror distortion)
+int ballAngle;    // angle of ball relative to robot (0 to 360 degrees)
+int ballDistance; // distance to ball (arbitrary units due to non-linear relationship caused by mirror distortion)
 int emptyLightGateThreshold;
 
 // Goals
@@ -739,7 +739,6 @@ void updateData() {
     if (isOnLine == true) { // failsafe: if was on line, move to the center
         wasOnLine = true;
     }
-    // EPRINT(isGoalYellow);
 }
 
 static float prevMoveAngle = 0;
@@ -795,7 +794,7 @@ void aim() {
     if (
         isBallCaptured &&
         (millis() - lastKickerMillis) > 2000 &&
-        y < 70 && confY > 0.7 && 88
+        y < 70 && confY > 0.7 &&
         x > (91 - 35) && x < (91 + 30) && confX > 0.7 &&
         abs(ANGLE_360_TO_180(goalAngle)) < 30
         // speed > SPEED * 0.5

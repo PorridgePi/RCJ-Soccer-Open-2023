@@ -193,7 +193,7 @@ void loop1() {
         memcpy(&blocks[i], &pixy.ccc.blocks[i], sizeof(Block));
     }
 
-    //categoriseBlock();
+    // categoriseBlock();
 
     // DPRINT(ballAngle);
 }
