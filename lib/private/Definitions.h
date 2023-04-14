@@ -5,8 +5,7 @@
 
 #define I2C_READ_ESP32_FREQUENCY 1000 // every x ms
 
-// Thresholds
-#define LIGHT_GATE_DIFFERENCE_THRESHOLD 100
+
 
 // PINS
 // Digital
