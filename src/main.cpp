@@ -435,93 +435,68 @@ int calibrateLightGate() {
 
 // Camera
 // gets distance to ball (arbitrary units), returns -1 if no ball detected
-Block getLargestBlock(int numBlocks, Block blocks[]) {
-    if (numBlocks == 0) {
-        return Block();
-    }
+int getBallDistance() {
+    Block ballBlock = ballBlocks[0]; // get first ball block ONLY (Potential improvement?)
+    if (ballBlock.m_signature == SIGNATURE_BALL) {
+        int xDiff = ballBlock.m_x - pixyXC;
+        int yDiff = ballBlock.m_y - pixyYC;
 
-    int maxSize = 0;
-    Block largestBlock;
+        // max distance = 5 * 84 = 420 since max change is around 84 pixels
+        return constrain(5 * hypot(xDiff, yDiff), 0, 3000);
+    } else {
+        return -1; // return -1 if no ball detected
+    }
+}
+
+int getGoalDistance() {
+    int dist = -1;
+    float maxSize = 0;
     for (int i = 0; i < numBlocks; i++) {
-        Block block = blocks[i];
-        float area = block.m_height * block.m_width;
-        if (area > maxSize) {
-            maxSize = area;
-            largestBlock = block;
+        Block block = (isGoalYellow == true ? yellowBlocks[i] : blueBlocks[i]);
+        if (block.m_signature == (isGoalYellow == true ? SIGNATURE_YELLOW_GOAL : SIGNATURE_BLUE_GOAL)) {
+            float area = block.m_height * block.m_width;
+            if (area > maxSize) {
+                int xDiff = block.m_x - pixyXC;
+                int yDiff = block.m_y - pixyYC;
+                maxSize = area;
+                dist = 5 * hypot(xDiff, yDiff);
+            }
         }
     }
-    return largestBlock;
-}
-
-float getBlockDistance(Block block) {
-    float xDiff = block.m_x - pixyXC;
-    float yDiff = block.m_y - pixyYC;
-    // max distance = 5 * 84 = 420 since max change is around 84 pixels
-    return max(0, 5 * hypot(xDiff, yDiff));
-}
-
-float getBlockAngle(Block block) {
-    float xDiff = block.m_x - pixyXC;
-    float yDiff = block.m_y - pixyYC;
-    float angle = atan2(yDiff, xDiff) * 180 / PI + 90;
-    return 360 - LIM_ANGLE(angle);
-}
-
-Block getNearestBlock(int numBlocks, Block blocks[]) {
-    if (numBlocks == 0) {
-        return Block();
-    }
-
-    float minDist = 10000000;
-    Block nearestBlock;
-    for (int i = 0; i < numBlocks; i++) {
-        Block block = blocks[i];
-        float dist = getBlockDistance(block);
-        if (dist < minDist) {
-            minDist = dist;
-            nearestBlock = block;
-        }
-    }
-    return nearestBlock;
+    
+    return dist;
 }
 
 // gets angle of ball relative to robot (0 to 360 degrees), returns -1 if no ball detected
-float getBallAngle(int numBlocks) {
-    if (numBlocks == 0) {
-        return -1;
+int getBallAngle() {
+    Block ballBlock = ballBlocks[0]; // uses first ball block ONLY (Potential improvement?)
+    if (ballBlock.m_signature == SIGNATURE_BALL) {
+        int xDiff = ballBlock.m_x - pixyXC;
+        int yDiff = ballBlock.m_y - pixyYC;
+
+        int angle = atan2(yDiff, xDiff) * 180 / PI + 90;
+        return 360 - LIM_ANGLE(angle);
+    } else {
+        return -1; // return -1 if no ball detected
     }
-
-    Block block = getNearestBlock(numBlocks, ballBlocks);
-    // max distance = 5 * 84 = 420 since max change is around 84 pixels
-    return getBlockAngle(block);
-}
-
-float getBallDistance(int numBlocks) {
-    if (numBlocks == 0) {
-        return -1;
-    }
-
-    Block block = getNearestBlock(numBlocks, ballBlocks);
-    // max distance = 5 * 84 = 420 since max change is around 84 pixels
-    return getBlockDistance(block);
 }
 
 float getGoalAngle(int numBlocks, bool isGoalYellow) {
-    if (numBlocks == 0) {
-        return -1;
+    float angle;
+    float maxSize = 0;
+    for (int i = 0; i < numBlocks; i++) {
+        Block block = (isGoalYellow == true ? yellowBlocks[i] : blueBlocks[i]);
+        if (block.m_signature == (isGoalYellow == true ? SIGNATURE_YELLOW_GOAL : SIGNATURE_BLUE_GOAL)) {
+            float area = block.m_height * block.m_width;
+            if (area > maxSize) {
+                int xDiff = block.m_x - pixyXC;
+                int yDiff = block.m_y - pixyYC;
+                maxSize = area;
+                angle = atan2(yDiff, xDiff) * 180 / PI + 90;
+            }
+        }
     }
-
-    Block block = getLargestBlock(numBlocks, (isGoalYellow == true ? yellowBlocks : blueBlocks));
-    return getBlockAngle(block);
-}
-
-float getGoalDistance(int numBlocks, bool isGoalYellow) {
-    if (numBlocks == 0) {
-        return -1;
-    }
-
-    Block block = getLargestBlock(numBlocks, (isGoalYellow == true ? yellowBlocks : blueBlocks));
-    return getBlockDistance(block);
+    return 360 - LIM_ANGLE(angle);
 }
 
 // categorises blocks into ball, yellow goal, and blue goal, and updates ball angle and distance
@@ -543,12 +518,17 @@ void categoriseBlock() {
 
     // Update ball angle and distance
     static unsigned long ballLastMillis = millis(); // last time ball was detected
+    static unsigned long ballLastInFrontMillis = millis(); //last time ball was in front
+    if (millis() - ballLastInFrontMillis > 0) { // timeout disabled
+        isBallInFront = false;
+    }
     if (numBall > 0) {
-        ballAngle    = getBallAngle(numBall);
-        ballDistance = getBallDistance(numBall);
+        ballAngle    = getBallAngle();
+        ballDistance = getBallDistance();
         ballLastMillis = millis();
         if ((ballAngle < IN_FRONT_FOV || ballAngle > (360 - IN_FRONT_FOV))) {
             isBallInFront = true;
+            ballLastInFrontMillis = millis();
         }
     } else { // no ball detected
         // if no ball detected for 1 second, reset ball angle and distance
@@ -560,39 +540,29 @@ void categoriseBlock() {
     }
 
     // Update goal angle and distance
-    int oppGoalNum, ownGoalNum;
-    if (isGoalYellow) { // opp: yellow goal, own: blue goal
-        oppGoalNum = numBlue;
-        ownGoalNum = numYellow;
-    } else {            // opp: blue goal, own: yellow goal
-        oppGoalNum = numYellow;
-        ownGoalNum = numBlue;
-    }
-
     static unsigned long goalLastMillis = millis(); // last time goal was detected
-    if (oppGoalNum > 0) {
-        goalDistance = getGoalDistance(oppGoalNum, isGoalYellow);
+    if ((isGoalYellow == true ? numYellow : numBlue) > 0) {
+        goalDistance = getGoalDistance();
         goalDistance = powf(((goalDistance-200.0f)/27.0f), 2);
-        goalAngle = getGoalAngle(oppGoalNum, isGoalYellow);
-        goalLastMillis = millis();
+        goalAngle = getGoalAngle((isGoalYellow == true ? numYellow : numBlue), isGoalYellow);
     } else { // no goal detected
         // if no goal detected for 1 second, reset goal angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
         if (millis() - goalLastMillis > 1000) {
             goalAngle = -1;
             goalDistance = -1;
+            goalLastMillis = millis();
         }
     }
-
     static unsigned long ownGoalLastMillis = millis(); // last time goal was detected
-    if (ownGoalNum > 0) {
-        ownGoalAngle = getGoalAngle(ownGoalNum, !isGoalYellow);
-        ownGoalLastMillis = millis();
+    if ((!isGoalYellow == true ? numYellow : numBlue) > 0) {
+        ownGoalAngle = getGoalAngle((!isGoalYellow == true ? numYellow : numBlue), !isGoalYellow);
     } else { // no goal detected
         // if no goal detected for 1 second, reset goal angle and distance
         // time is to prevent false reset (i.e. due to lag or blind spot)
         if (millis() - ownGoalLastMillis > 1000) {
-            ownGoalAngle = -1;
+            goalAngle = -1;
+            ownGoalLastMillis = millis();
         }
     }
 }
