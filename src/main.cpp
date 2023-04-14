@@ -71,7 +71,7 @@ Block        blueBlocks[10];   // array of blue goal blocks
 
 
 // Ball
-int ballAngle;    // angle of ball relative to robot (0 to 360 degrees)
+float ballAngle;    // angle of ball relative to robot (0 to 360 degrees)
 int ballDistance; // distance to ball (arbitrary units due to non-linear relationship caused by mirror distortion)
 int emptyLightGateThreshold;
 
@@ -143,7 +143,7 @@ MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
 IMU imu(Wire1, 75, -10, 1, 0);
 #endif
 
-float botHeading; // heading of robot (0 to 360 degrees)
+volatile float botHeading; // heading of robot (0 to 360 degrees)
 float rotateCommand; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
 
@@ -200,9 +200,9 @@ void updatePosition() {
     } else {
         yCorrection = 0; // ACTUAL FIELD TODO NOTE IMPORTANT
     }
-
+    
+    rawBackDist = lidarBack.read() * cosf(RAD(angle));
     frontDist   = constrain(lidarFront.read() * cosf(RAD(angle)) + yCorrection, 0, 255);
-    rawBackDist = constrain(lidarBack.read() * cosf(RAD(angle)), 0, 255);
     backDist    = constrain(rawBackDist + yCorrection, 0, 255);
     y = constrain((frontDist + 243 - backDist) / 2, 0, 255);
 }
@@ -474,7 +474,7 @@ int getBallAngle() {
         int xDiff = ballBlock.m_x - pixyXC;
         int yDiff = ballBlock.m_y - pixyYC;
 
-        int angle = atan2(yDiff, xDiff) * 180 / PI + 90;
+        float angle = atan2(yDiff, xDiff) * 180 / PI + 90;
         return 360 - LIM_ANGLE(angle);
     } else {
         return -1; // return -1 if no ball detected
@@ -907,7 +907,6 @@ void loop() {
         Serial.print("\t");
         Serial.print("Ball: ");
         Serial.print(ballAngle);
-        Serial.println();
     }
 
     // Loop time
@@ -927,6 +926,8 @@ void loop1() {
         // copy blocks to array so that they can be accessed in main loop
         memcpy(&blocks[i], &pixy.ccc.blocks[i], sizeof(Block));
     }
+
+
 }
 
 #endif
