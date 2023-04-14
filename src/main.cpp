@@ -742,10 +742,12 @@ void aim() {
         // prevSpeed = max(0.1f, powf(constrain(1.0f-goalDistance/100.0f, 0, 1), 1.5f) - 0.4f);
         prevSpeed = 0.1f;
     }
-    // DPRINT(prevSpeed);
-    float goalDistVelocity = max(0.05f, powf(constrain(1.0f-goalDistance/100.0f, 0, 1), 1.0f));
-    speed = constrain(powf(prevSpeed, 0.99f) + dt * goalDistVelocity / 10000, 0, SPEED);
-    // DPRINT(speed);
+    DPRINT(prevSpeed);
+    // float goalDistVelocity = max(0.05f, powf(constrain(1.0f-goalDistance/100.0f, 0, 1), 1.0f));
+    // speed = constrain(powf(prevSpeed, 0.99f) + dt * goalDistVelocity / 10000, 0, SPEED);
+    speed = constrain(powf(prevSpeed, 0.99f) + dt * 4 / 10000, 0, SPEED);
+
+    DPRINT(speed);
     // DPRINT(goalDistance);
     // DPRINT(goalDistVelocity);
 
@@ -825,7 +827,11 @@ void loop() {
     } else { // ball detected
         if (isBallInFront || isBallCaptured) { // ball in front
             if (ballDistance > MIN_BALL_DIST_THRESHOLD + 10 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
-                moveToBallInFront();
+                if (isBallCaptured) {
+                    aim();
+                } else {
+                    moveToBallInFront();
+                }
             } else { // ball close enough, aim ISSUE
                 // speed = 0;
                 aim();
