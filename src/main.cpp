@@ -152,7 +152,7 @@ float rotateCommand; // for compass correction (-180 to 180 degrees)
 float goalRotateAngle;
 
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
-Kicker kicker(PIN_RELAY);
+// Kicker kicker(PIN_RELAY);
 #endif
 
 //// ** FUNCTIONS ** ////
@@ -787,7 +787,7 @@ void aim() {
         // abs(ANGLE_360_TO_180(goalAngle)) < 30
         // speed > SPEED * 0.5
         ){
-        kicker.kick();
+        // kicker.kick();
         lastKickerMillis = millis();
     }
     #endif
