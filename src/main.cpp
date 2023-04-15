@@ -46,7 +46,11 @@
 
 #define SPEED_TO_TURN_RATE_RATIO 1
 
+#ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
 #define SPEED .8 // speed of robot (0.0 to 1.0)
+#else                   // BOT 2
+#define SPEED 1 // speed of robot (0.0 to 1.0)
+#endif
 
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
 #define SUM_X 181.0f
@@ -219,7 +223,7 @@ void constructSpeed() {
 
 void stayWithinBounds() {
     const int borderToleranceX = 9;
-    const int borderToleranceY = 13;
+    const int borderToleranceY = 9;
 
     deconstructSpeed();
 
@@ -265,7 +269,7 @@ void stayWithinBounds() {
     // }
 
     // increase confidence power if near border
-    const int minDistanceX = 30;
+    const int minDistanceX = 12;
     if (distanceX < minDistanceX) {
         confXPower = CONFX_POWER + powf((float) (minDistanceX - distanceX) / minDistanceX, 0.5) * 2;
     } else {
@@ -728,26 +732,38 @@ void aim() {
     static unsigned long lastKickerMillis = millis();
 
     lastAimMillis = millis();
-    if (goalDistance > 60) {
-        moveAngle = goalAngle * 1.01;
-    } else {
-        moveAngle = goalAngle;
-    }
+    // if (goalDistance > 60) {
+    //     moveAngle = goalAngle * 1.01;
+    // } else {
+    moveAngle = goalAngle;
+    // }
+    
+    // comment out below to disable localisation based aiming
+    // moveTo(91, 12, 2);
+    
+    DPRINT(moveAngle);
+    // if (abs(moveAngle) < 20) {
+    
+    //     moveAngle *= 1.5;
+    // }
     // moveAngle = constrain(prevMoveAngle + goalAngle * dt / 10, 0, goalAngle);
 
     prevMoveAngle = moveAngle;
     // speed = constrain(powf(prevSpeed, 0.99f) + dt * (min(6, (1.0f-((goalDistance-40)/80.0f))*6.0f)) / 1000, 0, SPEED);
     // DPRINT(goalDistance);
+    
     if (prevSpeed <= 0.1f) {
         // prevSpeed = max(0.1f, powf(constrain(1.0f-goalDistance/100.0f, 0, 1), 1.5f) - 0.4f);
-        prevSpeed = 0.1f;
+        prevSpeed = 0.2f;
     }
     DPRINT(prevSpeed);
     // float goalDistVelocity = max(0.05f, powf(constrain(1.0f-goalDistance/100.0f, 0, 1), 1.0f));
     // speed = constrain(powf(prevSpeed, 0.99f) + dt * goalDistVelocity / 10000, 0, SPEED);
-    speed = constrain(powf(prevSpeed, 0.99f) + dt * 4 / 1000, 0, SPEED);
-
+    
+    speed = constrain(prevSpeed + dt * 6 / 10000, 0, SPEED);
+    prevSpeed = speed;
     DPRINT(speed);
+
     // DPRINT(goalDistance);
     // DPRINT(goalDistVelocity);
 
@@ -822,16 +838,18 @@ void loop() {
     // Compass Correction
     rotateCommand = -constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/45, -1, 1);
 
+    DPRINT(isBallInFront || isBallCaptured);
+
     if (ballAngle == -1) { // no ball detected, move to centre
-        moveTo(91, 122, 3);
+        #ifndef IS_SECOND_BOT
+        moveTo(88, 122, 3);
+        #else
+        moveTo(94, 180, 3);
+        #endif
     } else { // ball detected
         if (isBallInFront || isBallCaptured) { // ball in front
-            if (ballDistance > MIN_BALL_DIST_THRESHOLD + 10 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
-                if (isBallCaptured) {
-                    aim();
-                } else {
-                    moveToBallInFront();
-                }
+            if (!isBallCaptured && ballDistance > MIN_BALL_DIST_THRESHOLD + 20 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
+                moveToBallInFront();
             } else { // ball close enough, aim ISSUE
                 // speed = 0;
                 aim();
@@ -846,14 +864,15 @@ void loop() {
         speed = 0;
     }
 
-    // speed = 1;
-    // moveTo(0, 91, 2);
-
     // Staying within bounds
     stayWithinBounds();
     // Staying within bounds (failsafe) using TEMTs
-    if (wasOnLine == true) { // failsafe: if on line, move to the center
-        moveTo(91, 122, 2);
+    if (isOnLine == true) { // failsafe: if on line, move to the center
+        #ifndef IS_SECOND_BOT
+        moveTo(88, 122, 3);
+        #else
+        moveTo(94, 122, 2);
+        #endif
         speed = max(0.3, SPEED/2);
     }
 
@@ -864,9 +883,9 @@ void loop() {
     driveBase.setDrive(speed, moveAngle, rotateCommand);
 
     averageLastSpeed = (averageLastSpeed * 99 + speed) / 100;
-    if (prevSpeed > 0) {
-        prevSpeed = speed;
-    }
+    // if (prevSpeed > 0) {
+    //     prevSpeed = speed;
+    // }
 
     //// ** DEBUG ** ////
     // DPRINT(moveAngle);
