@@ -1,13 +1,11 @@
 #include <Arduino.h>
 #include <Definitions.h>
-//#include <MechaQMC5883.h>
+#include <MechaQMC5883.h>
 #include <Wire.h>
 #include <IMU.h>
 
-//MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
-// MechaQMC5883 imu(Wire1, 0, 0, 1.07350865912, 66.1081956153);
-
-IMU imu(Wire1, 75, -10, 1, 0);
+MechaQMC5883 imu(Wire1, -190, -236, 1.03225739008, 53.8968998045);
+// IMU imu(Wire1, 64.5, -22, 0.983015342964, 49.1136970449);
 
 #include <Drive.h>
 #define MAX_SPEED 0.5
@@ -32,9 +30,9 @@ void setup() {
 
 void loop() {
     if (millis() % 10000 <= 5000) {
-        driveBase.setDrive(0, 0, 0.05, 0);
+        driveBase.setDrive(0, 0, 0.05);
     } else {
-        driveBase.setDrive(0, 0, -0.05, 0);
+        driveBase.setDrive(0, 0, -0.05);
     }
     imu.printRaw();
     // Serial.println(imu.readAngle());
