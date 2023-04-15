@@ -4,8 +4,8 @@
 #include <Wire.h>
 #include <IMU.h>
 
-MechaQMC5883 imu(Wire1, -190, -236, 1.03225739008, 53.8968998045);
-// IMU imu(Wire1, 64.5, -22, 0.983015342964, 49.1136970449);
+// MechaQMC5883 imu(Wire1, -190, -236, 1.03225739008, 53.8968998045);
+IMU imu(Wire1, 0, 0, 0.983015342964, 49.1136970449);
 
 #include <Drive.h>
 #define MAX_SPEED 0.5
