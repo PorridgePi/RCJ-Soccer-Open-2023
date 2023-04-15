@@ -16,11 +16,11 @@
 #define DEBUG_LOOP_TIME true
 
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
-#define pixyXC 135 // x-coordinate of center of Pixy2 camera
-#define pixyYC 114 // y-coordinate of center of Pixy2 camera
+#define pixyXC 137 // x-coordinate of center of Pixy2 camera
+#define pixyYC 111 // y-coordinate of center of Pixy2 camera
 #else                   // BOT 2
-#define pixyXC 141 // x-coordinate of center of Pixy2 camera
-#define pixyYC 113 // y-coordinate of center of Pixy2 camera
+#define pixyXC 138 // x-coordinate of center of Pixy2 camera
+#define pixyYC 106 // y-coordinate of center of Pixy2 camera
 #endif
 
 #define IN_FRONT_FOV 7 // angle in front of robot to search for ball
@@ -29,8 +29,8 @@
 #define SIGNATURE_BLUE_GOAL   2 // signature of blue goal
 #define SIGNATURE_YELLOW_GOAL 3 // signature of yellow goal
 
-#define MAX_BALL_DIST_THRESHOLD 420 // max distance to ball before out of range
-#define MIN_BALL_DIST_THRESHOLD 200 // min distance to ball
+#define MAX_BALL_DIST_THRESHOLD 400 // max distance to ball before out of range
+#define MIN_BALL_DIST_THRESHOLD 180 // min distance to ball
 // #define BALL_FUNCTION_THRESHOLD 0.000323979729302f
 
 #define LIGHT_GATE_DIFFERENCE_THRESHOLD 50
@@ -40,22 +40,22 @@
 #define CONFX_POWER 1.9f
 #define CONFY_POWER 2.0f
 
-#define BORDER_DISTANCE 25 // 12 // set to 25 for testing on ri field
+#define BORDER_DISTANCE 12 // 12 // set to 25 for testing on ri field
 
 #define BALL_FUNCTION_THRESHOLD 0.0004f // constant for distance to cm conversion
 
 #define SPEED_TO_TURN_RATE_RATIO 1
 
-#define SPEED 1 // speed of robot (0.0 to 1.0)
+#define SPEED .8 // speed of robot (0.0 to 1.0)
 
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
-#define SUM_X 183.0f
-#define SUM_Y 224.0f
+#define SUM_X 181.0f
+#define SUM_Y 225.0f
 // in goal sum_y is 222
 // outside of goal sum_y is 180
 #else                   // BOT 2
-#define SUM_X 183.0f
-#define SUM_Y 235.0f
+#define SUM_X 178.0f
+#define SUM_Y 230.0f
 #endif
 
 //// ** DECLARATIONS ** ////
@@ -120,12 +120,12 @@ float speedX, speedY, moveAngle;
 
 // LiDAR
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
-Lidar lidarFront(Wire, 0x12, -5); // front LiDAR
+Lidar lidarFront(Wire, 0x12, +6); // front LiDAR
 Lidar lidarRight(Wire, 0x13, +4); // right LiDAR
 Lidar lidarBack(Wire, 0x11, +6);  // back LiDAR
 Lidar lidarLeft(Wire, 0x10, +2);  // left LiDAR
 #else                   // BOT 2
-Lidar lidarFront(Wire, 0x11, +5); // front LiDAR
+Lidar lidarFront(Wire, 0x11, +8); // front LiDAR
 Lidar lidarRight(Wire, 0x13, +4); // right LiDAR
 Lidar lidarBack(Wire, 0x12, +4);  // back LiDAR
 Lidar lidarLeft(Wire, 0x10, +3);  // left LiDAR
@@ -138,9 +138,9 @@ int x, y; // coordinate of robot relative to field
 // IMU
 // IMU imu(Wire1, 0x1E); // IMU providing heading
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
-MechaQMC5883 imu(Wire1, -244, -305, 1.05993520658, 56.2635641705);
+MechaQMC5883 imu(Wire1, -190, -236, 1.03225739008, 53.8968998045);
 #else                   // BOT 2
-IMU imu(Wire1, 75, -10, 1, 0);
+IMU imu(Wire1, 64.5, -22, 0.983015342964, 49.1136970449);
 #endif
 
 volatile float botHeading; // heading of robot (0 to 360 degrees)
@@ -717,7 +717,7 @@ static unsigned long lastAimMillis = millis();
 
 void moveToBallInFront() {
     float distanceScale = constrain(powf(max(0, (float) (ballDistance - MIN_BALL_DIST_THRESHOLD) / (float) (MAX_BALL_DIST_THRESHOLD - MIN_BALL_DIST_THRESHOLD)), 2.0f), 0, 1);
-    float speedConstrain = constrain(distanceScale, max(0.25, SPEED / 3), SPEED);
+    float speedConstrain = constrain(distanceScale, max(0.2, SPEED / 4), SPEED);
     speed = constrain(speed, -speedConstrain, speedConstrain);
     moveAngle = 0;
     prevMoveAngle = 0;
@@ -745,7 +745,7 @@ void aim() {
     DPRINT(prevSpeed);
     // float goalDistVelocity = max(0.05f, powf(constrain(1.0f-goalDistance/100.0f, 0, 1), 1.0f));
     // speed = constrain(powf(prevSpeed, 0.99f) + dt * goalDistVelocity / 10000, 0, SPEED);
-    speed = constrain(powf(prevSpeed, 0.99f) + dt * 4 / 10000, 0, SPEED);
+    speed = constrain(powf(prevSpeed, 0.99f) + dt * 4 / 1000, 0, SPEED);
 
     DPRINT(speed);
     // DPRINT(goalDistance);
@@ -766,9 +766,9 @@ void aim() {
     if (
         isBallCaptured &&
         (millis() - lastKickerMillis) > 2000 &&
-        y < 70 && confY > 0.7 &&
-        x > (91 - 35) && x < (91 + 30) && confX > 0.7 &&
-        abs(ANGLE_360_TO_180(goalAngle)) < 30
+        y < 100 && confY > 0.7 &&
+        x > (91 - 20) && x < (91 + 20) && confX > 0.7
+        // abs(ANGLE_360_TO_180(goalAngle)) < 30
         // speed > SPEED * 0.5
         ){
         kicker.kick();
@@ -846,6 +846,9 @@ void loop() {
         speed = 0;
     }
 
+    // speed = 1;
+    // moveTo(0, 91, 2);
+
     // Staying within bounds
     stayWithinBounds();
     // Staying within bounds (failsafe) using TEMTs
@@ -866,9 +869,9 @@ void loop() {
     }
 
     //// ** DEBUG ** ////
-    DPRINT(moveAngle);
-    DPRINT(speed);
-    // DPRINT(botHeading);
+    // DPRINT(moveAngle);
+    // DPRINT(speed);
+    DPRINT(botHeading);
     // DPRINT(rotateCommand);
 
     // DPRINT(isBallInFront);
@@ -876,6 +879,9 @@ void loop() {
 
     // DPRINT(isOnLine);
     // DPRINT(wasOnLine);
+
+    DPRINT(confX);
+    DPRINT(confY);
 
     DPRINT(ballAngle);
     DPRINT(goalAngle);
@@ -913,6 +919,8 @@ void loop() {
         Serial.print("\t");
         Serial.print("Ball: ");
         Serial.print(ballAngle);
+        Serial.print("\tBall Distance: ");
+        Serial.print(ballDistance);
     }
 
     // Loop time
