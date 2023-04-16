@@ -19,8 +19,8 @@
 #define pixyXC 137 // x-coordinate of center of Pixy2 camera
 #define pixyYC 111 // y-coordinate of center of Pixy2 camera
 #else                   // BOT 2
-#define pixyXC 138 // x-coordinate of center of Pixy2 camera
-#define pixyYC 106 // y-coordinate of center of Pixy2 camera
+#define pixyXC 140 // x-coordinate of center of Pixy2 camera
+#define pixyYC 108 // y-coordinate of center of Pixy2 camera
 #endif
 
 #define IN_FRONT_FOV 7 // angle in front of robot to search for ball
@@ -49,7 +49,7 @@
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
 #define SPEED .8 // speed of robot (0.0 to 1.0)
 #else                   // BOT 2
-#define SPEED 1 // speed of robot (0.0 to 1.0)
+#define SPEED .8 // speed of robot (0.0 to 1.0)
 #endif
 
 #ifndef IS_SECOND_BOT   // BOT 1 WITH KICKER
@@ -100,9 +100,6 @@ float dt;
 
 bool wasOnLine = false;
 float confXPower = CONFX_POWER;
-
-// PID
-PID pid(0.02, 0, 0.1, 5000);
 
 static float averageLastSpeed = 0;
 
@@ -748,7 +745,7 @@ void aim() {
     // }
     // moveAngle = constrain(prevMoveAngle + goalAngle * dt / 10, 0, goalAngle);
 
-    prevMoveAngle = moveAngle;
+    // prevMoveAngle = moveAngle;
     // speed = constrain(powf(prevSpeed, 0.99f) + dt * (min(6, (1.0f-((goalDistance-40)/80.0f))*6.0f)) / 1000, 0, SPEED);
     // DPRINT(goalDistance);
     
@@ -760,7 +757,7 @@ void aim() {
     // float goalDistVelocity = max(0.05f, powf(constrain(1.0f-goalDistance/100.0f, 0, 1), 1.0f));
     // speed = constrain(powf(prevSpeed, 0.99f) + dt * goalDistVelocity / 10000, 0, SPEED);
     
-    speed = constrain(prevSpeed + dt * 6 / 10000, 0, SPEED);
+    speed = constrain(prevSpeed + dt * 12 / 10000, 0, SPEED);
     prevSpeed = speed;
     DPRINT(speed);
 
@@ -821,6 +818,10 @@ void setup() {
 void setup1() {
     pixy.init();
 }
+
+// PID
+PID pid(0.01, 0, 0.02, 5000);
+
 #ifndef IS_GOALIE
 // core 0 loop
 void loop() {
@@ -834,21 +835,24 @@ void loop() {
     //// ** STRATEGY ** ////
     // rotateCommand = constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/540, -1, 1); // from -180 to 180
     // rotateCommand = constrain(abs(rotateCommand), 0.03, 1) * copysign(1, rotateCommand);
-    // rotateCommand = constrain(pid.compute(0, -(LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1);
+    // rotateCommand = constrain(pid.compute(0, (LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)), -1, 1);
     // Compass Correction
-    rotateCommand = -constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/45, -1, 1);
 
-    DPRINT(isBallInFront || isBallCaptured);
+    #ifndef IS_SECOND_BOT  // BOT 1 WITH KICKER
+    rotateCommand = -constrain((LIM_ANGLE(botHeading) <= 180 ? LIM_ANGLE(botHeading) : LIM_ANGLE(botHeading) - 360)/45, -1, 1);
+    #else                  // BOT 2 WITHOUT KICKER
+    rotateCommand = constrain(pid.compute(0, ANGLE_360_TO_180(LIM_ANGLE(botHeading))), -1, 1);
+    #endif
 
     if (ballAngle == -1) { // no ball detected, move to centre
         #ifndef IS_SECOND_BOT
-        moveTo(88, 122, 3);
+        moveTo(75, 122, 3);
         #else
         moveTo(94, 180, 3);
         #endif
     } else { // ball detected
         if (isBallInFront || isBallCaptured) { // ball in front
-            if (!isBallCaptured && ballDistance > MIN_BALL_DIST_THRESHOLD + 20 && (millis() - lastAimMillis > 1000)) { // ball far away, move towards ball
+            if (!isBallCaptured && ballDistance > MIN_BALL_DIST_THRESHOLD + 20) { // ball far away, move towards ball //  && (millis() - lastAimMillis > 1000)
                 moveToBallInFront();
             } else { // ball close enough, aim ISSUE
                 // speed = 0;
@@ -856,6 +860,7 @@ void loop() {
             }
         } else { // ball not in front, move towards it
             moveTrackBall();
+            // prevSpeed = 0;
         }
     }
 
